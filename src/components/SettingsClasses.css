@@ -1,0 +1,35 @@
+/* The list clips overflow; menus need to escape it. */
+.cls-list { overflow: visible; min-width: 0; }
+
+.cls-row { display: block; padding: 0; min-height: 0; }
+.cls-row__line { display: flex; align-items: center; gap: 12px; padding: 10px 8px 10px 14px; min-height: 60px; }
+.cls-row--hidden .s-item__title { color: var(--text-3); }
+.cls-row__badge {
+  display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: 10px;
+  background: var(--surface-3); color: var(--text-2); font-size: 11px; font-weight: 500; line-height: 20px;
+  vertical-align: 1px;
+}
+.cls-row__swatch {
+  width: 24px; height: 24px; flex: none; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.cls-row__swatch:hover { transform: scale(1.1); }
+.cls-row__swatch:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cls-row--hidden .cls-row__swatch { opacity: .45; }
+
+.cls-row__menu-anchor { position: relative; }
+.cls-menu { z-index: 5; min-width: 200px; }
+.cls-menu button span { display: inline-flex; align-items: center; gap: 12px; }
+.cls-menu .material-symbols-outlined { font-size: 20px; color: var(--text-2); }
+.cls-menu button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.cls-menu .cls-menu__danger, .cls-menu .cls-menu__danger .material-symbols-outlined { color: var(--danger); }
+
+.cls-row__panel { padding: 0 14px 14px 50px; }
+.cls-merge { display: flex; align-items: flex-end; gap: 8px 12px; flex-wrap: wrap; }
+.cls-merge .s-field { flex: 1 1 200px; }
+.cls-merge select { appearance: auto; }
+.cls-merge__actions { display: flex; gap: 8px; margin-left: auto; }
+
+@media (max-width: 480px) {
+  .cls-row__panel { padding-left: 14px; }
+}

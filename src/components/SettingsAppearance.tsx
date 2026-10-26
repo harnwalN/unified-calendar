@@ -1,6 +1,7 @@
 import { useStore } from '../store';
 import type { Theme } from '../types';
 import Icon from './Icon';
+import SettingsScenery from './scenery/SettingsScenery';
 import './Settings.css';
 
 const THEMES: { value: Theme; label: string; icon: string }[] = [
@@ -51,6 +52,11 @@ export default function SettingsAppearance() {
           onClick={() => updateSettings({ hideCompleted: !settings.hideCompleted })}
         />
       </label>
+
+      <div className="s-subsection">
+        <h3 className="s-subhead">Background scene</h3>
+        <SettingsScenery />
+      </div>
     </div>
   );
 }

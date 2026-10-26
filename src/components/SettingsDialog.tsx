@@ -8,6 +8,10 @@ import SettingsIcsForm from './SettingsIcsForm';
 import SettingsReminders from './SettingsReminders';
 import SettingsAppearance from './SettingsAppearance';
 import SettingsPrivacy from './SettingsPrivacy';
+import SettingsDriveSync from './SettingsDriveSync';
+import SettingsClasses from './SettingsClasses';
+import SettingsGradescope from './SettingsGradescope';
+import SettingsPrairieLearn from './SettingsPrairieLearn';
 import './Settings.css';
 import './SettingsDialog.css';
 
@@ -26,9 +30,29 @@ const SECTIONS: Section[] = [
     body: <SettingsGoogleAccounts />,
   },
   {
+    id: 'sync', label: 'Sync', icon: 'cloud_sync',
+    description: 'Keep tasks, plans and time logs in step across your devices.',
+    body: <SettingsDriveSync />,
+  },
+  {
+    id: 'classes', label: 'Classes', icon: 'class',
+    description: 'How your assignments and tasks are grouped on the home screen.',
+    body: <SettingsClasses />,
+  },
+  {
     id: 'canvas', label: 'Canvas', icon: 'school',
     description: 'Add your Canvas assignments using your personal Calendar Feed link.',
     body: <div className="s-stack"><SettingsFeedList kind="canvas" /><SettingsCanvasForm /></div>,
+  },
+  {
+    id: 'gradescope', label: 'Gradescope', icon: 'grading',
+    description: 'Bring in Gradescope deadlines through Google Calendar.',
+    body: <SettingsGradescope />,
+  },
+  {
+    id: 'prairielearn', label: 'PrairieLearn', icon: 'bookmark_add',
+    description: 'Import PrairieLearn assessment deadlines with a bookmark.',
+    body: <SettingsPrairieLearn />,
   },
   {
     id: 'ics', label: 'Other calendars', icon: 'event_note',
@@ -42,7 +66,7 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'appearance', label: 'Appearance', icon: 'palette',
-    description: 'Theme and calendar display.',
+    description: 'Theme, calendar display and background scene.',
     body: <SettingsAppearance />,
   },
   {

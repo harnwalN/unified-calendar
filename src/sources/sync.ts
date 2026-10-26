@@ -38,6 +38,10 @@ function sourceExists(state: AppState, key: string): boolean {
   return activeSourceKeys(state).has(key);
 }
 
+/**
+ * Keys of sources that are fetched over the network. Imported sources (`pl:<id>`, see
+ * prairielearn.ts) live in `store.imports`, are never fetched, and their calendars are left alone.
+ */
 function activeSourceKeys(state: Pick<AppState, 'accounts' | 'feeds'>): Set<string> {
   return new Set([
     ...state.accounts.map((a) => sourceKeyFor.google(a.id)),
@@ -47,6 +51,7 @@ function activeSourceKeys(state: Pick<AppState, 'accounts' | 'feeds'>): Set<stri
 
 /** Sync a single source by its source key (see store/sourceKeyFor). */
 export function syncSource(sourceKey: string): Promise<void> {
+  if (sourceKey.startsWith('pl:')) return Promise.resolve();
   const existing = inflight.get(sourceKey);
   if (existing) return existing;
   const p = runSync(sourceKey).finally(() => inflight.delete(sourceKey));
