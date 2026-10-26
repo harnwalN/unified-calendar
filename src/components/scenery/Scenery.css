@@ -1,0 +1,125 @@
+/* Scenery banner. The illustration's colors come from the real sky (JS palette), not the
+   app theme; only the 'off' variant and its text follow tokens. */
+.scenery {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 140px;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+@media (max-width: 600px) {
+  .scenery { min-height: 110px; border-radius: var(--radius-l); }
+}
+
+.scenery--off { background: var(--surface-2); color: var(--text); }
+/* Children may use the text tokens directly, so re-point them at sky-legible colors. */
+.scenery--dark-sky .scenery__content {
+  --text: #ffffff;
+  --text-2: rgba(255, 255, 255, .9);
+  --text-3: rgba(255, 255, 255, .75);
+  color: var(--text);
+}
+.scenery--light-sky .scenery__content {
+  --text: #1b1d2a;
+  --text-2: rgba(27, 29, 42, .85);
+  --text-3: rgba(27, 29, 42, .7);
+  color: var(--text);
+}
+.scenery--off .scenery__content { color: var(--text); }
+
+.sc-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: -2; }
+.sc-art :where(rect, path, polygon, circle, ellipse, stop) {
+  transition: fill 1.2s ease, stop-color 1.2s ease, opacity 1.2s ease;
+}
+.sc-sun, .sc-moon { transition: transform 1.2s ease, opacity 1.2s ease; }
+.sc-shadow { fill: #0d1330; }
+
+/* Scrim behind the text column keeps overlay text legible on any sky. */
+.scenery__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: background 1.2s ease;
+}
+.scenery--dark-sky .scenery__scrim {
+  background: linear-gradient(100deg, rgba(8, 12, 32, .42) 0%, rgba(8, 12, 32, .16) 45%, transparent 75%);
+}
+.scenery--light-sky .scenery__scrim {
+  background: linear-gradient(100deg, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, .18) 45%, transparent 75%);
+}
+.scenery--dark-sky .scenery__content { text-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.scenery--light-sky .scenery__content { text-shadow: 0 1px 2px rgba(255, 255, 255, .5); }
+
+.scenery__content { position: relative; flex: 1 0 auto; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 24px; min-width: 0; }
+@media (max-width: 600px) {
+  .scenery__content { padding: 14px 16px; }
+}
+
+.sc-star { animation: sc-twinkle 4s ease-in-out infinite; }
+.sc-star--1 { animation-duration: 5.5s; animation-delay: -2s; }
+.sc-star--2 { animation-duration: 7s; animation-delay: -4s; }
+@keyframes sc-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-star { animation: none; }
+  .sc-art :where(rect, path, polygon, circle, ellipse, stop), .sc-sun, .sc-moon, .scenery__scrim { transition: none; }
+}
+
+/* Settings picker */
+.sc-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100px, 100%), 1fr));
+  gap: 10px;
+}
+.sc-thumb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+.sc-thumb__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  outline: 1px solid var(--border-soft);
+  outline-offset: -1px;
+  transition: box-shadow .15s ease;
+}
+.sc-thumb__art .sc-art { z-index: 0; }
+.sc-thumb__art--off { background: var(--surface-2); color: var(--text-3); }
+.sc-thumb:hover .sc-thumb__art { box-shadow: var(--shadow-1); }
+.sc-thumb[aria-checked='true'] .sc-thumb__art { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sc-thumb:focus-visible { outline: none; }
+.sc-thumb:focus-visible .sc-thumb__art { outline: 2px solid var(--primary); outline-offset: 2px; box-shadow: 0 0 0 6px var(--primary-container); }
+.sc-thumb__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  font-size: 20px;
+  color: var(--primary);
+  background: var(--surface);
+  border-radius: 50%;
+  font-variation-settings: 'FILL' 1;
+}
+.sc-thumb__label { font-size: 13px; color: var(--text-2); }
+.sc-thumb[aria-checked='true'] .sc-thumb__label { color: var(--text); font-weight: 500; }
+
+.sc-times { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--text); }
+.sc-times__item { display: inline-flex; align-items: center; gap: 6px; }
+.sc-times__item .material-symbols-outlined { font-size: 18px; color: var(--text-3); }
