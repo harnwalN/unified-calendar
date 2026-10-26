@@ -1,0 +1,25 @@
+.color-picker {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface-elevated);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-2);
+  animation: pop-in .12s ease-out;
+}
+.color-swatch {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff; /* check mark on a saturated swatch reads in both themes */
+  cursor: pointer;
+  transition: transform .1s;
+}
+.color-swatch:hover { transform: scale(1.15); }
