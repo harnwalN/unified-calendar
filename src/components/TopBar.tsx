@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { format } from 'date-fns';
-import { useStore } from '../store';
+import { sourceKeyFor, useStore } from '../store';
 import { stepCursor, viewTitle } from '../lib/time';
-import type { ViewMode } from '../types';
+import type { GoogleAccount, IcsFeed, ViewMode } from '../types';
 import Icon from './Icon';
 import { useMediaQuery, useNarrowDays, useNow } from './hooks';
 import { useShortcuts } from './useShortcuts';
@@ -175,8 +175,19 @@ function Clock() {
   );
 }
 
+/** Human-readable name for a source key: the account email or the feed's name. */
+function sourceLabel(key: string, accounts: GoogleAccount[], feeds: IcsFeed[]): string {
+  const account = accounts.find((a) => sourceKeyFor.google(a.id) === key);
+  if (account) return account.email || account.name || 'Google account';
+  const feed = feeds.find((f) => sourceKeyFor.feed(f) === key);
+  if (feed) return feed.name || (feed.kind === 'canvas' ? 'Canvas' : 'Calendar feed');
+  return key;
+}
+
 function SyncIndicator() {
   const syncStatus = useStore((s) => s.syncStatus);
+  const accounts = useStore((s) => s.accounts);
+  const feeds = useStore((s) => s.feeds);
   const entries = Object.entries(syncStatus);
   const loading = entries.some(([, st]) => st.state === 'loading');
   const errors = entries.filter(([, st]) => st.state === 'error');
@@ -189,7 +200,9 @@ function SyncIndicator() {
     );
   }
   if (errors.length) {
-    const msg = errors.map(([key, st]) => `${key}: ${st.error ?? 'Sync failed'}`).join('\n');
+    const msg = errors
+      .map(([key, st]) => `${sourceLabel(key, accounts, feeds)}: ${st.error ?? 'Sync failed'}`)
+      .join('\n');
     return (
       <button
         className="icon-btn topbar-sync error"
