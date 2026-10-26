@@ -4,7 +4,7 @@ import type { CalendarInfo } from '../types';
 import Icon from './Icon';
 import MiniMonth from './MiniMonth';
 import ColorPicker from './ColorPicker';
-import DueSoon from './DueSoon';
+import ClassCards from './tasks/ClassCards';
 import { DRAWER_QUERY, useMediaQuery } from './hooks';
 import './Sidebar.css';
 
@@ -38,6 +38,7 @@ export default function Sidebar() {
   const open = useStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
   const drawer = useMediaQuery(DRAWER_QUERY);
+  const calendarOpen = useStore((s) => s.calendarOpen);
 
   // Phones/tablets start with the drawer closed; layout effect avoids a flash of the open drawer.
   useLayoutEffect(() => {
@@ -78,9 +79,9 @@ export default function Sidebar() {
               </button>
             </div>
           )}
-          <MiniMonth onPick={drawer ? close : undefined} />
+          {calendarOpen && <MiniMonth onPick={drawer ? close : undefined} />}
+          <ClassCards onPick={drawer ? close : undefined} />
           <CalendarList onConnect={openSettings} />
-          <DueSoon />
           <div className="sidebar-footer">
             <button className="sidebar-link" onClick={openSettings}>
               <Icon name="settings" />
