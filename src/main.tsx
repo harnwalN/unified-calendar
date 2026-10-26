@@ -7,7 +7,13 @@ import App from './App';
 
 // Dev-only mock data (`?mock`); the dynamic import is dropped from production builds.
 if (import.meta.env.DEV && new URLSearchParams(location.search).has('mock')) {
-  void import('./dev/mockEvents').then((m) => m.loadMockData());
+  void Promise.all([import('./dev/mockEvents'), import('./dev/mockTasks'), import('./dev/mockTime')]).then(
+    ([events, tasks, time]) => {
+      events.loadMockData();
+      tasks.loadMockTasks();
+      time.loadMockTime();
+    },
+  );
 }
 
 // Dev-only visual feedback toolbar; lazy so it never lands in the production bundle.

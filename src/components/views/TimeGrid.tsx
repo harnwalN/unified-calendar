@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { format, isSameDay, isToday } from 'date-fns';
-import { useStore } from '../../store';
+import { isDone, useStore } from '../../store';
 import { useCalendarColor, useVisibleEvents } from '../../store/selectors';
 import {
   barIndexes,
@@ -133,7 +133,7 @@ export default function TimeGrid({ days }: { days: Date[] }) {
 function TimedBlock({ placed }: { placed: Placed }) {
   const { event, startMin, endMin, slot } = placed;
   const color = useCalendarColor(event.calendarId);
-  const done = useStore((s) => !!s.done[event.uid]);
+  const done = useStore((s) => isDone(s, event.uid));
   const selectEvent = useStore((s) => s.selectEvent);
   const point = isPointEvent(event);
   const duration = endMin - startMin;
@@ -236,7 +236,7 @@ function AllDayRow({ days, events }: { days: Date[]; events: CalEvent[] }) {
 
 function AllDayBar({ event, style, clippedStart }: { event: CalEvent; style: CSSProperties; clippedStart: boolean }) {
   const color = useCalendarColor(event.calendarId);
-  const done = useStore((s) => !!s.done[event.uid]);
+  const done = useStore((s) => isDone(s, event.uid));
   const selectEvent = useStore((s) => s.selectEvent);
   const assignment = event.kind === 'assignment';
   return (

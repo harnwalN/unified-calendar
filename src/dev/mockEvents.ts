@@ -1,6 +1,6 @@
 // Dev-only fixture: open http://localhost:5173/?mock to fill the store with realistic data.
 import { addDays, setHours, setMinutes, startOfDay, startOfWeek } from 'date-fns';
-import { useStore } from '../store';
+import { isDone, useStore } from '../store';
 import type { CalEvent, CalendarInfo } from '../types';
 
 const SOURCE = 'mock:dev';
@@ -108,6 +108,6 @@ export function loadMockData(): void {
   s.setEventsForSource(SOURCE, buildEvents(new Date()));
   // Mark one deadline as done so the checked-off style is visible.
   const first = useStore.getState().eventsBySource[SOURCE].find((e) => e.kind === 'assignment');
-  if (first && !useStore.getState().done[first.uid]) s.toggleDone(first.uid);
+  if (first && !isDone(useStore.getState(), first.uid)) s.toggleDone(first.uid);
   s.setOnboarded(true);
 }

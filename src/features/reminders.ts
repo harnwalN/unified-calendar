@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useStore } from '../store';
+import { useEffect, useMemo, useState } from 'react';
+import { doneMap, useStore } from '../store';
 import { useAllEvents } from '../store/selectors';
 import type { CalEvent } from '../types';
 
@@ -129,7 +129,8 @@ export function notificationsSupported(): boolean {
 /** Mount once in <App/>: schedules browser notifications for upcoming assignments. */
 export function useReminders(): void {
   const events = useAllEvents();
-  const done = useStore((s) => s.done);
+  const meta = useStore((s) => s.meta);
+  const done = useMemo(() => doneMap(meta), [meta]);
   const enabled = useStore((s) => s.settings.remindersEnabled);
   const offsets = useStore((s) => s.settings.reminderOffsetsMin);
   // Bumped hourly so reminders beyond the 24h horizon eventually get scheduled.

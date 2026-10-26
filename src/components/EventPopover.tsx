@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
-import { useStore } from '../store';
+import { isDone, useStore } from '../store';
 import { useAllEvents, useCalendarColor } from '../store/selectors';
 import { describeWhen } from '../lib/time';
 import type { CalEvent, SourceKind } from '../types';
@@ -24,7 +24,7 @@ export default function EventPopover() {
 function PopoverCard({ event }: { event: CalEvent }) {
   const selectEvent = useStore((s) => s.selectEvent);
   const calendar = useStore((s) => s.calendars[event.calendarId]);
-  const done = useStore((s) => !!s.done[event.uid]);
+  const done = useStore((s) => isDone(s, event.uid));
   const toggleDone = useStore((s) => s.toggleDone);
   const color = useCalendarColor(event.calendarId);
   const cardRef = useRef<HTMLDivElement>(null);

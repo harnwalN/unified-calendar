@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { useStore } from '../store';
+import { doneMap, useStore } from '../store';
 import { useAllEvents } from '../store/selectors';
 import { formatDue, getDueSoon } from '../features/checklist';
 import { useNow } from '../features/useNow';
@@ -46,7 +46,8 @@ function DueRow({ event, color, done, overdue, now }: {
 export default function DueSoon() {
   const events = useAllEvents();
   const calendars = useStore((s) => s.calendars);
-  const done = useStore((s) => s.done);
+  const meta = useStore((s) => s.meta);
+  const done = useMemo(() => doneMap(meta), [meta]);
   const now = useNow();
   const [showCompleted, setShowCompleted] = useState(false);
 
