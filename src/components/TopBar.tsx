@@ -5,6 +5,8 @@ import { stepCursor, viewTitle } from '../lib/time';
 import type { GoogleAccount, IcsFeed, ViewMode } from '../types';
 import Icon from './Icon';
 import TimerPill from './time/TimerPill';
+import StartTimerMenu from './time/StartTimerMenu';
+import { faviconSvg, svgDataUrl } from '../features/favicon';
 import { useMediaQuery, useNarrowDays, useNow } from './hooks';
 import { useShortcuts } from './useShortcuts';
 import './TopBar.css';
@@ -60,7 +62,7 @@ export default function TopBar() {
           <Icon name="menu" />
         </button>
         <div className="topbar-brand">
-          <img src={`${import.meta.env.BASE_URL}icons/icon.svg`} alt="" width={36} height={36} />
+          <BrandIcon />
           <span>Calendar</span>
         </div>
       </div>
@@ -87,7 +89,7 @@ export default function TopBar() {
       )}
 
       <div className="topbar-end">
-        <TimerPill />
+        {timing ? <TimerPill /> : <StartTimerMenu />}
         <SearchBox inputRef={searchRef} expanded={searchExpanded} setExpanded={setSearchExpanded} />
         <Clock />
         <SyncIndicator />
@@ -95,10 +97,10 @@ export default function TopBar() {
         <button
           className="icon-btn topbar-time"
           onClick={() => useStore.getState().setTimePageOpen(true)}
-          aria-label="Time tracked"
-          title="Time tracked"
+          aria-label="Time stats"
+          title="Time stats: where your time went today and this week"
         >
-          <Icon name="timer" />
+          <Icon name="bar_chart" />
         </button>
         <Accounts />
         <button
@@ -177,6 +179,12 @@ function SearchBox({
       </label>
     </div>
   );
+}
+
+/** Logo = today's live date tile (same art as the tab icon, without the stopwatch). */
+function BrandIcon() {
+  const now = useNow(60_000);
+  return <img src={svgDataUrl(faviconSvg(now))} alt="" width={36} height={36} />;
 }
 
 function Clock() {

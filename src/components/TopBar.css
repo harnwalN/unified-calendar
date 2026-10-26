@@ -63,14 +63,22 @@
 
 /* ---- clock ---- */
 .topbar-clock {
-  padding: 0 8px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  line-height: 40px;
   font-family: var(--font);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   color: var(--text-2);
   white-space: nowrap;
 }
-.topbar-clock-time { color: var(--text); font-weight: 500; }
+.topbar-clock-time { font-size: 22px; font-weight: 500; letter-spacing: -.01em; color: var(--text); }
+.topbar-clock-ampm { font-size: 13px; color: var(--text-2); }
 
 .topbar-sync { display: inline-grid; place-items: center; width: 40px; height: 40px; color: var(--text-3); }
 .topbar-sync.error { color: var(--danger); }
@@ -147,7 +155,8 @@
   .topbar-title { font-size: 17px; }
   .topbar-end { gap: 0; }
   .topbar .topbar-end > .icon-btn, .topbar .topbar-search-toggle { width: 36px; height: 36px; }
-  .topbar-clock { padding: 0 2px; font-size: 12px; }
+  .topbar-clock { padding: 0 4px; background: none; font-size: 12px; }
+  .topbar-clock-time { font-size: 16px; }
   .topbar-sync { width: 28px; }
   .view-menu-btn { width: 36px; padding: 0; justify-content: center; border: 0; }
   .topbar .view-menu-label, .topbar .view-menu-btn > .material-symbols-outlined:last-child { display: none; }

@@ -10,7 +10,6 @@ import SettingsAppearance from './SettingsAppearance';
 import SettingsPrivacy from './SettingsPrivacy';
 import SettingsDriveSync from './SettingsDriveSync';
 import SettingsClasses from './SettingsClasses';
-import SettingsGradescope from './SettingsGradescope';
 import SettingsPrairieLearn from './SettingsPrairieLearn';
 import './Settings.css';
 import './SettingsDialog.css';
@@ -43,11 +42,6 @@ const SECTIONS: Section[] = [
     id: 'canvas', label: 'Canvas', icon: 'school',
     description: 'Add your Canvas assignments using your personal Calendar Feed link.',
     body: <div className="s-stack"><SettingsFeedList kind="canvas" /><SettingsCanvasForm /></div>,
-  },
-  {
-    id: 'gradescope', label: 'Gradescope', icon: 'grading',
-    description: 'Bring in Gradescope deadlines through Google Calendar.',
-    body: <SettingsGradescope />,
   },
   {
     id: 'prairielearn', label: 'PrairieLearn', icon: 'bookmark_add',

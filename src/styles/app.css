@@ -117,6 +117,8 @@ html, body { overflow: hidden; overscroll-behavior: none; }
   border-radius: var(--radius-m);
   box-shadow: var(--shadow-2);
   animation: pop-in .12s ease-out;
+  max-height: min(70vh, 480px);
+  overflow-y: auto;
 }
 .menu button {
   display: flex;
@@ -134,6 +136,9 @@ html, body { overflow: hidden; overscroll-behavior: none; }
 }
 .menu button:hover { background: var(--surface-3); }
 .menu button.active { background: var(--primary-container); color: var(--on-primary-container); }
+.menu-label { padding: 8px 16px 2px; font-size: 12px; font-weight: 500; color: var(--text-3); }
+.menu-divider { height: 1px; margin: 4px 0; background: var(--border-soft); }
+.menu button.menu-danger { color: var(--danger); }
 .menu kbd { font-family: var(--font-body); font-size: 12px; color: var(--text-3); }
 
 /* ---- shared bits ---- */

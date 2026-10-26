@@ -12,12 +12,13 @@ export function normalizeCourse(course: string): string {
 }
 
 /**
- * Short course code used to auto-group sources: "CSE 110 - Lecture A00 (FA26)",
- * "CSE110" and "cse 110" all → "CSE 110". Falls back to the normalized string.
+ * Short course code used to auto-group sources: "CSE 110 - Lecture A00 (FA26)", "CSE110",
+ * "cse 110" → "CSE 110"; Canvas SIS codes like "MCWP040_FA26_017" → "MCWP 40".
+ * Falls back to the normalized string.
  */
 export function courseCode(course: string): string {
   const n = normalizeCourse(course);
-  const m = n.match(/^([A-Z]{2,5})\s*-?\s*(\d{1,4}[A-Z]{0,2})\b/);
+  const m = n.match(/^([A-Z]{2,5})[\s_-]*0*(\d{1,4}[A-Z]{0,2})(?=$|[^A-Z0-9])/);
   return m ? `${m[1]} ${m[2]}` : n;
 }
 
@@ -66,6 +67,8 @@ export function useAutoClasses(): void {
       const match = findClassForCourse(snapshot, course);
       if (match) {
         if (!match.aliases.includes(norm)) updateClass(match.id, { aliases: [...match.aliases, norm] });
+        // Classes auto-named with a raw course string before courseCode understood it get the short name.
+        else if (match.name === norm && courseCode(course) !== norm) updateClass(match.id, { name: courseCode(course) });
       } else if (!isDeletedCourse(snapshot, course)) {
         const used = Object.values(snapshot).filter((c) => !c.deleted).length;
         addClass({ name: courseCode(course), color: PALETTE[used % PALETTE.length], aliases: [norm] });

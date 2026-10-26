@@ -10,17 +10,25 @@ import './QuickAdd.css';
 
 export const QUICK_ADD_ID = 'quick-add-input';
 
+/** Where a new task goes unless the text says otherwise (#class or a leading "q"). */
+type Target = 'personal' | 'quick' | `class:${string}`;
+
 export default function QuickAdd() {
   const [text, setText] = useState('');
+  const [target, setTarget] = useState<Target>('personal');
   const classes = useClasses();
   const addTask = useStore((s) => s.addTask);
   const parsed = useMemo(() => (text.trim() ? parseQuickAdd(text, new Date(), classes) : null), [text, classes]);
-  const cls = parsed?.classId ? classes.find((c) => c.id === parsed.classId) : undefined;
+  // Text wins over the picker: "#CSE110" picks a class, a leading "q"/short estimate makes it quick.
+  const pickedClassId = target.startsWith('class:') ? target.slice(6) : undefined;
+  const classId = parsed?.classId ?? pickedClassId;
+  const list = parsed?.list === 'quick' || (!parsed?.classId && target === 'quick') ? 'quick' : 'personal';
+  const cls = classId ? classes.find((c) => c.id === classId) : undefined;
 
   const submit = () => {
     if (!parsed?.title) return;
-    const { title, due, doDate, classId, priority, estimateMin, list } = parsed;
-    addTask({ title, due, doDate, classId, priority, estimateMin, list });
+    const { title, due, doDate, priority, estimateMin } = parsed;
+    addTask({ title, due, doDate, classId: list === 'quick' ? undefined : classId, priority, estimateMin, list });
     setText('');
   };
 
@@ -49,6 +57,23 @@ export default function QuickAdd() {
           autoComplete="off"
           enterKeyHint="done"
         />
+        <label className="quick-add-target" title="Where the task goes">
+          <span className="sr-only">Add to</span>
+          <select value={target} onChange={(e) => setTarget(e.target.value as Target)}>
+            <option value="personal">Personal</option>
+            <option value="quick">Quick items</option>
+            {classes.length > 0 && (
+              <optgroup label="Classes">
+                {classes.map((c) => (
+                  <option key={c.id} value={`class:${c.id}`}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          <Icon name="arrow_drop_down" />
+        </label>
         {text && (
           <button className="icon-btn small" onClick={submit} disabled={!parsed?.title} aria-label="Add task" title="Add (Enter)">
             <Icon name="arrow_upward" />
@@ -90,7 +115,7 @@ export default function QuickAdd() {
               Plan: {doDateLabel(parsed.doDate, now)}
             </li>
           )}
-          {parsed.list === 'quick' && (
+          {list === 'quick' && (
             <li className="qa-chip">
               <Icon name="bolt" size={16} />
               Quick item

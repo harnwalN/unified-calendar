@@ -209,7 +209,6 @@ describe('format helpers', () => {
 
   it('openLinkLabel', () => {
     expect(openLinkLabel('https://canvas.ucsd.edu/courses/1')).toBe('Open in Canvas');
-    expect(openLinkLabel('https://www.gradescope.com/courses/1')).toBe('Open in Gradescope');
     expect(openLinkLabel('https://us.prairielearn.com/pl/course_instance/1')).toBe('Open in PrairieLearn');
     expect(openLinkLabel('https://example.com')).toBe('Open link');
     expect(openLinkLabel('not a url')).toBe('Open link');

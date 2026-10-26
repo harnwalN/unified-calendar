@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { faviconSvg, timeOfDayColor } from './favicon';
+import { elapsedLabel, faviconSvg, timeOfDayColor } from './favicon';
 
 const at = (h: number, m = 0) => new Date(2026, 9, 26, h, m);
 
@@ -30,5 +30,19 @@ describe('faviconSvg', () => {
     const svg = faviconSvg(at(11));
     expect(svg).toContain('>26</text>');
     expect(svg).toContain('#1a73e8');
+  });
+});
+
+describe('stopwatch on the icon', () => {
+  it('formats elapsed time compactly', () => {
+    expect(elapsedLabel(0)).toBe('0m');
+    expect(elapsedLabel(25 * 60_000 + 59_000)).toBe('25m');
+    expect(elapsedLabel(65 * 60_000)).toBe('1:05');
+  });
+  it('shows elapsed time in red while timing', () => {
+    const svg = faviconSvg(at(11), 25 * 60_000);
+    expect(svg).toContain('>25m</text>');
+    expect(svg).toContain('#d93025');
+    expect(svg).not.toContain('>26</text>');
   });
 });

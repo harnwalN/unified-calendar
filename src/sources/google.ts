@@ -307,43 +307,13 @@ async function listAll<T>(accountId: string, baseUrl: string): Promise<T[]> {
   return out;
 }
 
-// ---- Gradescope (deadlines written to Google Calendar by the "Gradescope to Cal" extension) ----
-
-const GRADESCOPE_URL_RE = /https?:\/\/(?:www\.)?gradescope\.com\/[^\s<>"')\]]*/i;
-// Course code like "CSE 110" / "MATH20C", but not an assignment label like "HW 3" or "PA2".
-const COURSE = '(?!(?:HW|PA|PS|MP|WA|LAB|QUIZ|EXAM|PROJ|PROJECT|PART)\\s?-?\\d)[A-Z]{2,5}\\s?-?\\d{1,4}[A-Z]{0,3}';
-const TITLE_PATTERNS: { re: RegExp; title: number; course: number }[] = [
-  { re: /^\[([^\]]+)\]\s*[-:]?\s*(.+)$/, course: 1, title: 2 }, // [CSE 110] HW 3
-  { re: new RegExp(`^(${COURSE}[^:]*):\\s*(.+)$`), course: 1, title: 2 }, // CSE 110: HW 3
-  { re: new RegExp(`^(.+?)\\s*\\((${COURSE}[^)]*)\\)$`), title: 1, course: 2 }, // HW 3 (CSE 110)
-  { re: new RegExp(`^(${COURSE})\\s+[-–—|]\\s+(.+)$`), course: 1, title: 2 }, // CSE 110 - HW 3
-  { re: new RegExp(`^(.+?)\\s+[-–—|]\\s+(${COURSE}.*)$`), title: 1, course: 2 }, // HW 3 - CSE 110
-];
-
-/** Splits a Gradescope deadline title into assignment title + course, if the title names one. */
-export function splitGradescopeTitle(summary: string): { title: string; course?: string } {
-  const s = summary.trim();
-  for (const p of TITLE_PATTERNS) {
-    const m = p.re.exec(s);
-    if (m && m[p.title].trim() && m[p.course].trim()) return { title: m[p.title].trim(), course: m[p.course].trim() };
-  }
-  return { title: s };
-}
-
-/** "Gradescope – CSE 110" → "CSE 110"; undefined when nothing is left. */
-function courseFromCalendarName(name: string): string | undefined {
-  const rest = name.replace(/gradescope/gi, '').replace(/^[\s\-–—:|()[\]]+|[\s\-–—:|()[\]]+$/g, '');
-  return rest || undefined;
-}
-
 function parseGoogleTime(t: GEventTime | undefined): Date | null {
   if (t?.dateTime) return new Date(t.dateTime);
   if (t?.date) return localDate(t.date);
   return null;
 }
 
-/** `calendarName` lets Gradescope deadlines be recognized by the calendar they live in. */
-export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: string, calendarName = ''): CalEvent | null {
+export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: string): CalEvent | null {
   if (ev.status === 'cancelled') return null;
   const start = parseGoogleTime(ev.start);
   if (!start) return null;
@@ -351,7 +321,7 @@ export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: stri
   let end = parseGoogleTime(ev.end) ?? start;
   if (allDay && end <= start) end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
   const uid = `${googleCalId}:${ev.id}`;
-  const base: CalEvent = {
+  return {
     // uid is stable per Google calendar; id is also unique when two accounts share a calendar.
     id: `${calendarId}:${ev.id}`,
     uid,
@@ -364,23 +334,6 @@ export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: stri
     description: ev.description ? htmlToText(ev.description) || undefined : undefined,
     url: ev.htmlLink,
     kind: 'event',
-  };
-
-  const gsUrl = GRADESCOPE_URL_RE.exec(`${ev.description ?? ''} ${ev.location ?? ''}`)?.[0];
-  if (!gsUrl && !/gradescope/i.test(calendarName)) return base;
-
-  // Point deadline like Canvas: a timed "due" event often spans up to the deadline, so use its end.
-  const due = allDay ? new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59) : end;
-  const { title, course } = splitGradescopeTitle(base.title);
-  return {
-    ...base,
-    title,
-    course: course ?? courseFromCalendarName(calendarName),
-    start: due.toISOString(),
-    end: due.toISOString(),
-    allDay: false,
-    url: gsUrl ?? base.url,
-    kind: 'assignment',
   };
 }
 
@@ -418,7 +371,7 @@ export async function fetchGoogleSource(
           accountId,
           `${API}/calendars/${encodeURIComponent(c.id)}/events?${params}`,
         );
-        return items.flatMap((ev) => mapGoogleEvent(ev, calendars[i].id, c.id, calendars[i].name) ?? []);
+        return items.flatMap((ev) => mapGoogleEvent(ev, calendars[i].id, c.id) ?? []);
       } catch (err) {
         // One inaccessible calendar (e.g. unshared since listing) shouldn't fail the account.
         if (err instanceof GoogleApiError && (err.status === 403 || err.status === 404)) return [];

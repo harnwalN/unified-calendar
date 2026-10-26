@@ -225,7 +225,7 @@ export default function SettingsClasses() {
   if (!classes.length) {
     return (
       <p className="s-msg">
-        <Icon name="info" /> Classes appear automatically from your Canvas, Gradescope and PrairieLearn assignments.
+        <Icon name="info" /> Classes appear automatically from your Canvas and PrairieLearn assignments.
       </p>
     );
   }
@@ -238,7 +238,7 @@ export default function SettingsClasses() {
         <Icon name="info" />
         <span>
           The same course can show up under different names (for example “CSE 110 - FA26” on Canvas and “CSE 110” on
-          Gradescope). Use <b>Merge</b> in a class’s menu to combine them into one class.
+          PrairieLearn). Use <b>Merge</b> in a class’s menu to combine them into one class.
         </span>
       </p>
     </div>

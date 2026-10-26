@@ -5,7 +5,7 @@ A free, Google-Calendar-style web app that puts **all your calendars in one plac
 - 📅 **Google Calendar** from as many Google accounts as you like (read-only)
 - 🎓 **Canvas assignments** via your personal Canvas *Calendar Feed* link — no API token needed
 - 🔗 **Any other calendar** with an `.ics` / webcal link (holidays, sports, Outlook, clubs…)
-- 📝 **Gradescope** deadlines (via the *Gradescope to Cal* extension) and **PrairieLearn** deadlines (via a bookmarklet)
+- 📝 **PrairieLearn** deadlines (via a bookmarklet)
 - ☁️ Optional **sync across devices** through a hidden app folder in your own Google Drive
 
 Features: day / week / month / agenda views, search, per-calendar colors and visibility, a **“Due soon” checklist** for
@@ -43,17 +43,11 @@ and installs as an app (PWA). Everything is stored in your browser — there is 
 
 7. **Classes.** Assignments are grouped into classes automatically from their course names. In **Settings → Classes**
    you can rename, recolor, reorder, hide or delete them, and **merge** two classes when the same course shows up
-   under different names (e.g. `CSE 110 - FA26` on Canvas and `CSE 110` on Gradescope).
-8. **Gradescope.** Install the free *Gradescope to Cal* extension
-   ([Chrome](https://chromewebstore.google.com/detail/bbepekfgnpdfclkpfoojmfclnbkkbbco) ·
-   [Firefox](https://addons.mozilla.org/firefox/addon/gradescope-to-cal/)) and let it write your deadlines to a Google
-   Calendar of a connected account. Events in a calendar whose name contains “Gradescope”, or whose description links
-   to `gradescope.com`, become assignments; the course is read from titles like `[CSE 110] HW 3`, `CSE 110: HW 3`,
-   `HW 3 (CSE 110)` or `HW 3 - CSE 110`, else from the calendar name.
-9. **PrairieLearn.** PrairieLearn has no calendar feed, so **Settings → PrairieLearn** offers a **Send to Calendar**
+   under different names (e.g. `CSE 110 - FA26` on Canvas and `CSE 110` on PrairieLearn).
+8. **PrairieLearn.** PrairieLearn has no calendar feed, so **Settings → PrairieLearn** offers a **Send to Calendar**
    bookmarklet: drag it to your bookmarks bar, open a course’s *Assessments* page on PrairieLearn and click it. The app
    opens and imports the deadlines (run it again to update). Imported courses are listed there and can be removed.
-10. **Sync across devices.** In **Settings → Sync**, pick one of your connected Google accounts. Google asks once for
+9. **Sync across devices.** In **Settings → Sync**, pick one of your connected Google accounts. Google asks once for
     permission to use the app’s own hidden folder in your Drive (`drive.appdata` — it can’t see your other files). Your
     classes, task plans/notes, personal tasks, time logs and PrairieLearn imports are kept in one file there
     (`unified-calendar.json`) and merged per item (last edit wins) on start, on focus, every 5 minutes and a few
@@ -170,7 +164,7 @@ src/
   types.ts              shared data contracts (events, calendars, accounts, feeds, settings)
   config.ts             build-time config (client ID, Worker URL) and color palette
   store/                zustand store (+ selectors)
-  sources/              Google (+ Gradescope detection), .ics/Canvas sync, Drive app-data sync, PrairieLearn import
+  sources/              Google, .ics/Canvas sync, Drive app-data sync, PrairieLearn import
   lib/                  date helpers, IndexedDB cache, recurrence expansion
   features/             checklist (Due soon), reminders, feed-link validation, reset
   components/           TopBar, Sidebar, views, EventPopover, SettingsDialog, Onboarding, DueSoon

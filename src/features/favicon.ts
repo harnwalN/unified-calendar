@@ -1,5 +1,6 @@
 // Live tab icon: today's date on a calendar tile whose color follows the time of day.
 import { useEffect } from 'react';
+import { useStore } from '../store';
 
 /** [hour of day, color] keyframes; colors are interpolated between them. */
 const KEYFRAMES: [number, string][] = [
@@ -34,20 +35,39 @@ export function timeOfDayColor(date: Date): string {
   return KEYFRAMES[0][1];
 }
 
-/** SVG markup for the icon: colored header band + date number. */
-export function faviconSvg(date: Date): string {
-  const color = timeOfDayColor(date);
-  const day = date.getDate();
-  const size = day >= 10 ? 34 : 38;
+/** Stopwatch label for the icon: "0m"…"59m", then "1:05". */
+export function elapsedLabel(ms: number): string {
+  const min = Math.floor(ms / 60_000);
+  return min < 60 ? `${min}m` : `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
+}
+
+const TIMER_COLOR = '#d93025';
+
+/**
+ * SVG markup for the icon: a centered calendar tile with a colored header band and the date
+ * number. While a stopwatch runs (`elapsedMs` set) it shows the elapsed time in red instead.
+ */
+export function faviconSvg(date: Date, elapsedMs?: number): string {
+  const timing = elapsedMs !== undefined;
+  const color = timing ? TIMER_COLOR : timeOfDayColor(date);
+  const text = timing ? elapsedLabel(elapsedMs) : String(date.getDate());
+  const size = text.length <= 1 ? 38 : text.length === 2 ? 34 : text.length === 3 ? 27 : 22;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<rect x="3" y="5" width="58" height="56" rx="12" fill="#fff" stroke="${color}" stroke-width="4"/>
-<path d="M3 17a12 12 0 0 1 12-12h34a12 12 0 0 1 12 12v5H3z" fill="${color}"/>
-<text x="32" y="53" font-family="Google Sans,Roboto,Arial,sans-serif" font-size="${size}" font-weight="700" text-anchor="middle" fill="${color}">${day}</text>
+<rect x="4" y="4" width="56" height="56" rx="12" fill="#fff" stroke="${color}" stroke-width="4"/>
+<path d="M4 16a12 12 0 0 1 12-12h32a12 12 0 0 1 12 12v4H4z" fill="${color}"/>
+${timing ? '<circle cx="32" cy="12" r="3.5" fill="#fff"/>' : ''}
+<text x="32" y="${timing ? 49 : 51}" font-family="Google Sans,Roboto,Arial,sans-serif" font-size="${size}" font-weight="700" text-anchor="middle" fill="${color}">${text}</text>
 </svg>`;
 }
 
-/** Mount once in <App/>: keeps the tab icon on today's date and the current time-of-day color. */
+export const svgDataUrl = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
+
+/**
+ * Mount once in <App/>: keeps the tab icon on today's date in the current time-of-day color,
+ * or on the running stopwatch's elapsed time while one is timing.
+ */
 export function useDynamicFavicon(): void {
+  const timer = useStore((s) => s.runningTimer);
   useEffect(() => {
     let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (!link) {
@@ -57,18 +77,19 @@ export function useDynamicFavicon(): void {
     }
     let last = '';
     const update = () => {
-      const svg = faviconSvg(new Date());
+      const now = new Date();
+      const svg = faviconSvg(now, timer ? Math.max(0, now.getTime() - Date.parse(timer.start)) : undefined);
       if (svg === last) return;
       last = svg;
       link!.type = 'image/svg+xml';
-      link!.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+      link!.href = svgDataUrl(svg);
     };
     update();
-    const id = setInterval(update, 60_000);
+    const id = setInterval(update, timer ? 5_000 : 60_000);
     document.addEventListener('visibilitychange', update);
     return () => {
       clearInterval(id);
       document.removeEventListener('visibilitychange', update);
     };
-  }, []);
+  }, [timer]);
 }

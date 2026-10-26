@@ -15,13 +15,26 @@ const STATUSES: TaskStatus[] = ['todo', 'doing', 'done'];
 const PRIORITIES: Priority[] = ['none', 'low', 'medium', 'high'];
 const ESTIMATES = [10, 30, 60, 120];
 
+type Deleted = { id: string; title: string };
+const deletedListeners = new Set<(d: Deleted) => void>();
+
+/** Delete a personal task from anywhere and offer the shared "Undo" toast. */
+export function deleteTaskWithUndo(id: string, title: string) {
+  useStore.getState().deleteTask(id);
+  deletedListeners.forEach((l) => l({ id, title }));
+}
+
 /** Drawer for `selectedTaskRef`: right panel on desktop, bottom sheet on phones. */
 export default function TaskDetail() {
   const ref = useStore((s) => s.selectedTaskRef);
   const tasks = useTasks();
   const task = ref ? tasks.find((t) => t.ref === ref) : undefined;
-  const [undo, setUndo] = useState<{ id: string; title: string } | null>(null);
+  const [undo, setUndo] = useState<Deleted | null>(null);
 
+  useEffect(() => {
+    deletedListeners.add(setUndo);
+    return () => void deletedListeners.delete(setUndo);
+  }, []);
   useEffect(() => {
     if (!undo) return;
     const t = setTimeout(() => setUndo(null), 6000);

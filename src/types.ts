@@ -114,7 +114,7 @@ export interface Subtask {
   done: boolean;
 }
 
-/** Planning fields shared by Canvas/Gradescope/PrairieLearn assignments and personal tasks. */
+/** Planning fields shared by Canvas/PrairieLearn assignments and personal tasks. */
 export interface TaskFields {
   status: TaskStatus;
   priority: Priority;

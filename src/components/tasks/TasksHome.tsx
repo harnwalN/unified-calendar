@@ -61,7 +61,8 @@ export default function TasksHome() {
             </button>
           </div>
         ) : (
-          <>
+          <div className="th-columns">
+            <div className="th-col-main">
             {openCount === 0 && tasks.length > 0 && (
               <div className="th-celebrate" role="status">
                 <Icon name="celebration" />
@@ -80,11 +81,16 @@ export default function TasksHome() {
               )}
             </Section>
 
-            {classes.map((c) => (
-              <ClassBlock key={c.id} section={c} now={now} collapsed={collapsed} onToggle={toggle} />
-            ))}
+            {classes.length > 0 && (
+              <div className="th-class-grid">
+                {classes.map((c) => (
+                  <ClassBlock key={c.id} section={c} now={now} collapsed={collapsed} onToggle={toggle} />
+                ))}
+              </div>
+            )}
+            </div>
 
-            {personal.open.length + personal.done.length > 0 && (
+            <aside className="th-col-side" aria-label="Personal and quick tasks">
               <Section
                 id="personal"
                 title="Personal"
@@ -93,12 +99,19 @@ export default function TasksHome() {
                 collapsed={collapsed.personal}
                 onToggle={toggle}
               >
-                <GroupBody group={personal} now={now} sectionId="personal" collapsed={collapsed} onToggle={toggle} />
+                <GroupBody
+                  group={personal}
+                  now={now}
+                  sectionId="personal"
+                  collapsed={collapsed}
+                  onToggle={toggle}
+                  empty={<p className="th-none">Your own to-dos. Add one above and pick “Personal”.</p>}
+                />
               </Section>
-            )}
 
-            <QuickSection group={quick} now={now} collapsed={collapsed} onToggle={toggle} />
-          </>
+              <QuickSection group={quick} now={now} collapsed={collapsed} onToggle={toggle} />
+            </aside>
+          </div>
         )}
       </div>
     </div>
@@ -125,11 +138,14 @@ interface SectionProps {
   extra?: ReactNode;
   collapsed?: boolean;
   onToggle: (id: string) => void;
+  /** When set, the title can be renamed inline (pencil button or double-click). */
+  onRename?: (name: string) => void;
   children: ReactNode;
 }
 
-function Section({ id, title, icon, color, count, extra, collapsed, onToggle, children }: SectionProps) {
+function Section({ id, title, icon, color, count, extra, collapsed, onToggle, onRename, children }: SectionProps) {
   const bodyId = `section-body-${id}`;
+  const [editing, setEditing] = useState(false);
   return (
     <section
       id={id.startsWith('class-') ? id : `section-${id}`}
@@ -137,12 +153,33 @@ function Section({ id, title, icon, color, count, extra, collapsed, onToggle, ch
       style={color ? ({ '--task-color': color } as CSSProperties) : undefined}
     >
       <header className="th-section-head">
-        <button className="th-toggle" onClick={() => onToggle(id)} aria-expanded={!collapsed} aria-controls={bodyId}>
-          <Icon name="expand_more" className="th-chevron" />
-          {color ? <span className="th-dot" aria-hidden="true" /> : icon && <Icon name={icon} className="th-icon" />}
-          <h2>{title}</h2>
-          {count !== undefined && count > 0 && <span className="th-count">{count}</span>}
-        </button>
+        {editing && onRename && typeof title === 'string' ? (
+          <RenameField
+            initial={title}
+            onDone={(name) => {
+              setEditing(false);
+              if (name && name !== title) onRename(name);
+            }}
+          />
+        ) : (
+          <button
+            className="th-toggle"
+            onClick={() => onToggle(id)}
+            onDoubleClick={onRename ? () => setEditing(true) : undefined}
+            aria-expanded={!collapsed}
+            aria-controls={bodyId}
+          >
+            <Icon name="expand_more" className="th-chevron" />
+            {color ? <span className="th-dot" aria-hidden="true" /> : icon && <Icon name={icon} className="th-icon" />}
+            <h2>{title}</h2>
+            {count !== undefined && count > 0 && <span className="th-count">{count}</span>}
+          </button>
+        )}
+        {onRename && !editing && (
+          <button className="icon-btn small th-rename" onClick={() => setEditing(true)} aria-label={`Rename ${title}`} title="Rename">
+            <Icon name="edit" />
+          </button>
+        )}
         {extra}
       </header>
       {!collapsed && (
@@ -151,6 +188,28 @@ function Section({ id, title, icon, color, count, extra, collapsed, onToggle, ch
         </div>
       )}
     </section>
+  );
+}
+
+function RenameField({ initial, onDone }: { initial: string; onDone: (name: string) => void }) {
+  const [value, setValue] = useState(initial);
+  return (
+    <input
+      className="th-rename-input"
+      value={value}
+      autoFocus
+      aria-label="Class name"
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => onDone(value.trim())}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onDone(initial);
+        }
+      }}
+    />
   );
 }
 
@@ -222,6 +281,8 @@ function ClassBlock({
   onToggle: (id: string) => void;
 }) {
   const id = `class-${c.id}`;
+  // Only real classes can be renamed (not the synthetic "Other" group).
+  const isClass = useStore((s) => !!s.classes[c.id] && !s.classes[c.id].deleted);
   const pct = c.weekTotal ? Math.round((c.weekDone / c.weekTotal) * 100) : 0;
   const extra = (
     <div className="th-class-stats">
@@ -259,6 +320,7 @@ function ClassBlock({
       extra={extra}
       collapsed={collapsed[id]}
       onToggle={onToggle}
+      onRename={isClass ? (name) => useStore.getState().updateClass(c.id, { name }) : undefined}
     >
       <GroupBody
         group={c}
