@@ -1,12 +1,4 @@
 /* Time page: dialog shell, cards and inline charts. */
-.time-page {
-  /* Status for "over estimate". Not a categorical color; text always accompanies it. */
-  --time-warn: #b06000;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .time-page { --time-warn: #fdd663; }
-}
-:root[data-theme='dark'] .time-page { --time-warn: #fdd663; }
 
 .time-scrim {
   position: fixed;
@@ -226,11 +218,11 @@
 .estimate-nums span { color: var(--text-3); }
 .estimate-meter { position: relative; height: 8px; border-radius: 4px; background: var(--surface-3); }
 .estimate-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--primary); }
-.estimate.over .estimate-fill { background: var(--time-warn); }
+.estimate.over .estimate-fill { background: var(--warning); }
 .estimate.over-far .estimate-fill { background: var(--danger); }
 .estimate-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text); border-radius: 1px; }
 .estimate-status { display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--text-2); font-size: 13px; white-space: nowrap; }
-.estimate.over .estimate-status .material-symbols-outlined { color: var(--time-warn); }
+.estimate.over .estimate-status .material-symbols-outlined { color: var(--warning); }
 .estimate.over-far .estimate-status .material-symbols-outlined { color: var(--danger); }
 
 /* ---- responsive ---- */
