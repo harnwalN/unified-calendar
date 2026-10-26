@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { useStore } from '../../store';
-import { dayKey } from '../../store/tasks';
+import { dayKey, useClasses } from '../../store/tasks';
 import { toggleTimer, useRunningElapsed } from '../../features/timer';
 import type { Priority, TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
 import { doDateLabel, dueLabel, formatDuration, formatEstimate } from './format';
+import { deleteTaskWithUndo } from './TaskDetail';
 import './TaskRow.css';
 
 const LONG_PRESS_MS = 500;
@@ -186,6 +187,10 @@ function RowMenu({ task }: { task: TaskView }) {
     setOpen(false);
   };
   const today = dayKey(new Date());
+  const classes = useClasses();
+  const personalId = task.source === 'personal' ? task.ref.slice(2) : null;
+  const move = (patch: { list: 'personal' | 'quick'; classId?: string }) =>
+    act(() => s().updateTask(personalId!, { ...patch, classId: patch.classId }));
 
   return (
     <div className="task-menu" ref={ref}>
@@ -226,6 +231,40 @@ function RowMenu({ task }: { task: TaskView }) {
               Open details
             </button>
           </li>
+          {personalId && (
+            <>
+              <li role="separator" className="menu-label">Move to</li>
+              <li role="none">
+                <button role="menuitemradio" aria-checked={task.list === 'personal'} className={task.list === 'personal' ? 'active' : undefined} onClick={move({ list: 'personal' })}>
+                  Personal
+                </button>
+              </li>
+              <li role="none">
+                <button role="menuitemradio" aria-checked={task.list === 'quick'} className={task.list === 'quick' ? 'active' : undefined} onClick={move({ list: 'quick' })}>
+                  Quick items
+                </button>
+              </li>
+              {classes.map((c) => (
+                <li key={c.id} role="none">
+                  <button
+                    role="menuitemradio"
+                    aria-checked={task.classId === c.id}
+                    className={task.classId === c.id ? 'active' : undefined}
+                    onClick={move({ list: 'personal', classId: c.id })}
+                  >
+                    {c.name}
+                  </button>
+                </li>
+              ))}
+              <li role="separator" className="menu-divider" />
+              <li role="none">
+                <button role="menuitem" className="menu-danger" onClick={act(() => deleteTaskWithUndo(personalId, task.title))}>
+                  Delete
+                  <Icon name="delete" />
+                </button>
+              </li>
+            </>
+          )}
         </ul>
       )}
     </div>

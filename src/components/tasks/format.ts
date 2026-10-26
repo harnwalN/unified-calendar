@@ -63,7 +63,6 @@ export function openLinkLabel(url: string): string {
     return 'Open link';
   }
   if (host.includes('canvas') || host.includes('instructure')) return 'Open in Canvas';
-  if (host.includes('gradescope')) return 'Open in Gradescope';
   if (host.includes('prairielearn')) return 'Open in PrairieLearn';
   if (host.includes('piazza')) return 'Open in Piazza';
   return 'Open link';

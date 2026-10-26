@@ -13,6 +13,8 @@ describe('courseCode', () => {
     expect(courseCode('cse110')).toBe('CSE 110');
     expect(courseCode('MATH 18')).toBe('MATH 18');
     expect(courseCode('COGS 108A')).toBe('COGS 108A');
+    expect(courseCode('MCWP040_FA26_017')).toBe('MCWP 40');
+    expect(courseCode('CSE_100_A00')).toBe('CSE 100');
   });
   it('falls back to the normalized string', () => {
     expect(courseCode('  Intro to  Writing ')).toBe('INTRO TO WRITING');
@@ -26,7 +28,7 @@ describe('findClassForCourse', () => {
   };
   it('matches exact aliases and course codes across sources', () => {
     expect(findClassForCourse(classes, 'cse 110 - lecture a00')?.id).toBe('a');
-    expect(findClassForCourse(classes, 'CSE 110')?.id).toBe('a'); // e.g. Gradescope spelling
+    expect(findClassForCourse(classes, 'CSE 110')?.id).toBe('a'); // e.g. another source's spelling
   });
   it('ignores deleted classes', () => {
     expect(findClassForCourse(classes, 'MATH 18')).toBeUndefined();

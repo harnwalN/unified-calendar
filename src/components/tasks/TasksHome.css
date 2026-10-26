@@ -9,9 +9,32 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 960px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 16px 24px 96px;
+  padding: 16px 32px 96px;
+}
+
+/* ---- two-column body: Today + class cards | Personal + Quick ---- */
+.th-columns { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.th-col-main, .th-col-side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.th-class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 20px; align-items: start; }
+.th-class-grid .th-section, .th-col-side .th-section, .th-col-main > .th-section {
+  padding: 8px 16px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+@media (min-width: 1180px) {
+  .th-columns { grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); }
+  .th-col-side { position: sticky; top: 16px; }
+}
+.th-rename { opacity: 0; transition: opacity .12s; }
+.th-section-head:hover .th-rename, .th-rename:focus-visible { opacity: 1; }
+@media (hover: none) { .th-rename { opacity: 1; } }
+.th-rename-input {
+  flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 12px;
+  border: 2px solid var(--primary); border-radius: var(--radius-m);
+  background: var(--surface); font-family: var(--font); font-size: 16px; font-weight: 500;
 }
 
 /* ---- banner ---- */

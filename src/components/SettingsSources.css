@@ -1,4 +1,4 @@
-/* Gradescope + PrairieLearn settings sections. */
+/* PrairieLearn settings section. */
 .src-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; }
 .src-links a, .s-item__actions a.s-icon-btn { text-decoration: none; }
 .src-hint { display: block; margin-top: 6px; font-size: 12px; color: var(--text-3); }

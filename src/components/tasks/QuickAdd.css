@@ -58,3 +58,33 @@
 }
 .qa-flag.high { color: var(--danger); }
 .qa-flag.medium { color: var(--warning); }
+
+/* Category picker inside the field: a tonal chip wrapping a native <select>. */
+.quick-add-target {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  max-width: 40%;
+  height: 36px;
+  border-radius: 18px;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.quick-add-target:hover { background: var(--surface-3); }
+.quick-add-target select {
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  height: 100%;
+  padding: 0 28px 0 14px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  font-family: var(--font);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.quick-add-target select:focus-visible { outline: 2px solid var(--primary); }
+.quick-add-target .material-symbols-outlined { position: absolute; right: 6px; pointer-events: none; }
