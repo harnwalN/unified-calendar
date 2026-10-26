@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { addDays, format, isToday, startOfDay } from 'date-fns';
-import { useStore } from '../../store';
+import { isDone, useStore } from '../../store';
 import { useCalendarColor, useVisibleEvents } from '../../store/selectors';
 import { agendaTime, eventDayRange } from '../../lib/time';
 import type { CalEvent } from '../../types';
@@ -93,7 +93,7 @@ export default function AgendaView() {
 
 function AgendaRow({ event, day }: { event: CalEvent; day: Date }) {
   const color = useCalendarColor(event.calendarId);
-  const done = useStore((s) => !!s.done[event.uid]);
+  const done = useStore((s) => isDone(s, event.uid));
   const selectEvent = useStore((s) => s.selectEvent);
   const sub = [event.course, event.location].filter(Boolean).join(' · ');
   return (

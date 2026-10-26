@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { format, isSameMonth, isToday, startOfMonth } from 'date-fns';
-import { useStore } from '../../store';
+import { isDone, useStore } from '../../store';
 import { useCalendarColor, useVisibleEvents } from '../../store/selectors';
 import { eventTouchesDay, isAllDayRow, isPointEvent, monthGridDays, shortTime, weekdayLabels } from '../../lib/time';
 import type { CalEvent } from '../../types';
@@ -99,7 +99,7 @@ export default function MonthView() {
 
 function MonthChip({ event }: { event: CalEvent }) {
   const color = useCalendarColor(event.calendarId);
-  const done = useStore((s) => !!s.done[event.uid]);
+  const done = useStore((s) => isDone(s, event.uid));
   const selectEvent = useStore((s) => s.selectEvent);
   const assignment = event.kind === 'assignment';
   const filled = isAllDayRow(event) || assignment;

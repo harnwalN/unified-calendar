@@ -1,13 +1,16 @@
 import { useEffect } from 'react';
 import { useStore } from './store';
+import { useAutoClasses } from './store/tasks';
 import { useSync } from './sources/sync';
+import { useDriveSync } from './sources/driveSync';
+import { useHashImport } from './sources/prairielearn';
 import { useReminders } from './features/reminders';
+import { useDynamicFavicon } from './features/favicon';
 import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
-import DayView from './components/views/DayView';
-import WeekView from './components/views/WeekView';
-import MonthView from './components/views/MonthView';
-import AgendaView from './components/views/AgendaView';
+import TasksHome from './components/tasks/TasksHome';
+import TaskDetail from './components/tasks/TaskDetail';
+import TimePage from './components/time/TimePage';
 import EventPopover from './components/EventPopover';
 import SettingsDialog from './components/SettingsDialog';
 import Onboarding from './components/Onboarding';
@@ -22,10 +25,13 @@ function useApplyTheme() {
 }
 
 export default function App() {
-  const view = useStore((s) => s.view);
   const onboarded = useStore((s) => s.onboarded);
   useApplyTheme();
+  useDynamicFavicon();
   useSync();
+  useAutoClasses();
+  useDriveSync();
+  useHashImport();
   useReminders();
 
   return (
@@ -34,12 +40,12 @@ export default function App() {
       <div className="app-body">
         <Sidebar />
         <main className="app-main">
-          {view === 'day' && <DayView />}
-          {view === 'week' && <WeekView />}
-          {view === 'month' && <MonthView />}
-          {view === 'agenda' && <AgendaView />}
+          {/* Tasks-first home; the day/week/month/agenda views expand inside it. */}
+          <TasksHome />
         </main>
       </div>
+      <TaskDetail />
+      <TimePage />
       <EventPopover />
       <SettingsDialog />
       {!onboarded && <Onboarding />}
