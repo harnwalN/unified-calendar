@@ -32,6 +32,15 @@ export function findClassForCourse(classes: Record<string, ClassInfo>, course: s
   );
 }
 
+/** True when the user deleted the class this course belonged to (so it isn't auto-created again). */
+export function isDeletedCourse(classes: Record<string, ClassInfo>, course: string): boolean {
+  const norm = normalizeCourse(course);
+  const code = courseCode(course);
+  return Object.values(classes).some(
+    (c) => c.deleted && c.aliases.some((a) => a === norm || courseCode(a) === code),
+  );
+}
+
 /** Live classes in display order. */
 export function useClasses(): ClassInfo[] {
   const classes = useStore((s) => s.classes);
@@ -57,7 +66,7 @@ export function useAutoClasses(): void {
       const match = findClassForCourse(snapshot, course);
       if (match) {
         if (!match.aliases.includes(norm)) updateClass(match.id, { aliases: [...match.aliases, norm] });
-      } else {
+      } else if (!isDeletedCourse(snapshot, course)) {
         const used = Object.values(snapshot).filter((c) => !c.deleted).length;
         addClass({ name: courseCode(course), color: PALETTE[used % PALETTE.length], aliases: [norm] });
       }

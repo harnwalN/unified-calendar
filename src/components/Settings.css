@@ -76,6 +76,12 @@
 .s-item__title { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .s-item__sub { font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
 .s-item__actions { display: flex; align-items: center; gap: 2px; flex: none; }
+/* Long sync errors wrap (up to 3 lines) instead of being clipped. */
+.s-item__sub:has(.s-status--error, .s-status--warn) {
+  white-space: normal; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3;
+}
+.s-item__sub .s-status { display: inline; }
 .s-item__rename { height: 32px; }
 
 .s-avatar {

@@ -22,8 +22,10 @@ export async function resetApp(): Promise<void> {
     Promise.allSettled(accounts.map((a) => disconnectGoogleAccount(a.id))),
     timeout(4000),
   ]);
-  localStorage.removeItem('unified-calendar');
-  localStorage.removeItem(FIRED_KEY);
+  // Every key the app writes (store, reminders, granted Google scopes, last timed task, collapsed sections).
+  for (const key of ['unified-calendar', FIRED_KEY, 'unified-calendar:granted-scopes', 'time:lastRef', 'tasks-home:collapsed']) {
+    localStorage.removeItem(key);
+  }
   await Promise.race([deleteDatabase('unified-calendar'), timeout(3000)]);
   location.reload();
 }

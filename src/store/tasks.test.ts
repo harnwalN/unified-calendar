@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CalEvent, ClassInfo, PersonalTask, TimeEntry } from '../types';
 import { migrateState } from './index';
-import { buildTaskViews, courseCode, findClassForCourse, timeTotals } from './tasks';
+import { buildTaskViews, courseCode, findClassForCourse, isDeletedCourse, timeTotals } from './tasks';
 
 const cls = (id: string, aliases: string[], extra: Partial<ClassInfo> = {}): ClassInfo => ({
   id, name: id, color: '#000', aliases, order: 0, updatedAt: 1, ...extra,
@@ -30,6 +30,10 @@ describe('findClassForCourse', () => {
   });
   it('ignores deleted classes', () => {
     expect(findClassForCourse(classes, 'MATH 18')).toBeUndefined();
+  });
+  it('remembers deleted courses so they are not auto-created again', () => {
+    expect(isDeletedCourse(classes, 'math 18')).toBe(true);
+    expect(isDeletedCourse(classes, 'CSE 110')).toBe(false);
   });
 });
 

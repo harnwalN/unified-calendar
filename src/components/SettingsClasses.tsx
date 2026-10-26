@@ -56,7 +56,7 @@ function ClassMenu({ cls, onClose, onRename, onMerge, canMerge }: {
       {canMerge && item('call_merge', 'Merge into…', onMerge)}
       {item('delete', 'Delete', () => {
         const msg = cls.aliases.length
-          ? `Delete “${cls.name}”? Its assignments will be regrouped into a new class the next time they sync — use “Hide” or “Merge” to keep it out of the way instead.`
+          ? `Delete “${cls.name}”? Its assignments will move to “Other” and the class won’t be re-created. To keep its tasks grouped but out of the way, use “Hide” instead.`
           : `Delete “${cls.name}”? Personal tasks in it will move to “Personal”.`;
         if (confirm(msg)) deleteClass(cls.id);
       }, true)}
