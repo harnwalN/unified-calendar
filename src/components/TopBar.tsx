@@ -4,6 +4,7 @@ import { sourceKeyFor, useStore } from '../store';
 import { stepCursor, viewTitle } from '../lib/time';
 import type { GoogleAccount, IcsFeed, ViewMode } from '../types';
 import Icon from './Icon';
+import TimerPill from './time/TimerPill';
 import { useMediaQuery, useNarrowDays, useNow } from './hooks';
 import { useShortcuts } from './useShortcuts';
 import './TopBar.css';
@@ -22,6 +23,8 @@ export default function TopBar() {
   const sidebarOpen = useStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
   const setCursor = useStore((s) => s.setCursor);
+  const calendarOpen = useStore((s) => s.calendarOpen);
+  const timing = useStore((s) => s.runningTimer !== null);
   const narrowDays = useNarrowDays();
   const phone = useMediaQuery('(max-width: 599px)');
 
@@ -45,7 +48,7 @@ export default function TopBar() {
   const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
 
   return (
-    <header className="topbar">
+    <header className={`topbar${timing ? ' timing' : ''}${calendarOpen ? ' calendar' : ''}`}>
       <div className="topbar-start">
         <button
           className="icon-btn"
@@ -62,27 +65,41 @@ export default function TopBar() {
         </div>
       </div>
 
-      <nav className="topbar-nav" aria-label="Date navigation">
-        <button className="outline-btn topbar-today" onClick={() => setCursor(new Date())} title="Today (T)">
-          <span className="topbar-today-label">Today</span>
-          <Icon name="today" className="topbar-today-icon" />
-        </button>
-        <button className="icon-btn small" onClick={() => step(-1)} aria-label={`Previous ${unit}`} title={`Previous ${unit} (K)`}>
-          <Icon name="chevron_left" />
-        </button>
-        <button className="icon-btn small" onClick={() => step(1)} aria-label={`Next ${unit}`} title={`Next ${unit} (J)`}>
-          <Icon name="chevron_right" />
-        </button>
-        <h1 className="topbar-title" aria-live="polite">
-          {title}
-        </h1>
-      </nav>
+      {/* Calendar navigation only matters while the full calendar is expanded. */}
+      {calendarOpen ? (
+        <nav className="topbar-nav" aria-label="Date navigation">
+          <button className="outline-btn topbar-today" onClick={() => setCursor(new Date())} title="Today (T)">
+            <span className="topbar-today-label">Today</span>
+            <Icon name="today" className="topbar-today-icon" />
+          </button>
+          <button className="icon-btn small" onClick={() => step(-1)} aria-label={`Previous ${unit}`} title={`Previous ${unit} (K)`}>
+            <Icon name="chevron_left" />
+          </button>
+          <button className="icon-btn small" onClick={() => step(1)} aria-label={`Next ${unit}`} title={`Next ${unit} (J)`}>
+            <Icon name="chevron_right" />
+          </button>
+          <h1 className="topbar-title" aria-live="polite">
+            {title}
+          </h1>
+        </nav>
+      ) : (
+        <div className="topbar-spacer" />
+      )}
 
       <div className="topbar-end">
+        <TimerPill />
         <SearchBox inputRef={searchRef} expanded={searchExpanded} setExpanded={setSearchExpanded} />
         <Clock />
         <SyncIndicator />
-        <ViewMenu />
+        {calendarOpen && <ViewMenu />}
+        <button
+          className="icon-btn topbar-time"
+          onClick={() => useStore.getState().setTimePageOpen(true)}
+          aria-label="Time tracked"
+          title="Time tracked"
+        >
+          <Icon name="timer" />
+        </button>
         <Accounts />
         <button
           className="icon-btn topbar-settings"
