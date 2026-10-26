@@ -1,0 +1,73 @@
+.timer-pill {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 320px;
+  height: 36px;
+  margin: 0 4px;
+  border-radius: 18px;
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  animation: pop-in .15s ease-out;
+}
+.timer-pill-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px 0 12px;
+  border: 0;
+  border-radius: 18px 0 0 18px;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font);
+  font-weight: 500;
+  cursor: pointer;
+}
+.timer-pill-main:hover, .timer-pill-stop:hover { background: color-mix(in srgb, var(--on-primary-container) 8%, transparent); }
+.timer-pill-dot {
+  position: relative;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.timer-pill-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  animation: timer-pulse 2s ease-out infinite;
+}
+.timer-pill-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timer-pill-clock { flex: none; font-variant-numeric: tabular-nums; }
+.timer-pill-stop {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 0 18px 18px 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.timer-pill-stop .material-symbols-outlined { font-size: 22px; font-variation-settings: 'FILL' 1; }
+
+@keyframes timer-pulse {
+  0% { opacity: .5; transform: scale(.6); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+@media (max-width: 599px) {
+  .timer-pill { margin: 0 2px; height: 32px; }
+  .timer-pill-main { gap: 6px; padding-left: 10px; font-size: 13px; }
+  .timer-pill-title { display: none; }
+  .timer-pill-stop { width: 32px; height: 32px; }
+}

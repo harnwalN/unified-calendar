@@ -154,3 +154,15 @@
   .topbar .view-menu-icon { display: inline-block; }
   .topbar .topbar-accounts, .topbar .topbar-settings, .topbar .topbar-clock-ampm { display: none; }
 }
+
+/* ---- time tracking ---- */
+.topbar-spacer { flex: 1; min-width: 0; }
+.topbar-end { min-width: 0; }
+
+@media (max-width: 599px) {
+  .topbar .topbar-time { width: 36px; height: 36px; }
+  /* The pill already shows a running clock; give it the room. */
+  .topbar.timing .topbar-clock { display: none; }
+  /* With date navigation shown too, the pill (tap → task) stands in for the Time button. */
+  .topbar.timing.calendar .topbar-time { display: none; }
+}
