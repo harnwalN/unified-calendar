@@ -15,8 +15,20 @@
 }
 
 .scenery--off { background: var(--surface-2); color: var(--text); }
-.scenery--dark-sky { color: #ffffff; }
-.scenery--light-sky { color: #1b1d2a; }
+/* Children may use the text tokens directly, so re-point them at sky-legible colors. */
+.scenery--dark-sky .scenery__content {
+  --text: #ffffff;
+  --text-2: rgba(255, 255, 255, .9);
+  --text-3: rgba(255, 255, 255, .75);
+  color: var(--text);
+}
+.scenery--light-sky .scenery__content {
+  --text: #1b1d2a;
+  --text-2: rgba(27, 29, 42, .85);
+  --text-3: rgba(27, 29, 42, .7);
+  color: var(--text);
+}
+.scenery--off .scenery__content { color: var(--text); }
 
 .sc-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: -2; }
 .sc-art :where(rect, path, polygon, circle, ellipse, stop) {
@@ -42,7 +54,7 @@
 .scenery--dark-sky .scenery__content { text-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
 .scenery--light-sky .scenery__content { text-shadow: 0 1px 2px rgba(255, 255, 255, .5); }
 
-.scenery__content { position: relative; padding: 20px 24px; min-width: 0; }
+.scenery__content { position: relative; flex: 1 0 auto; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 24px; min-width: 0; }
 @media (max-width: 600px) {
   .scenery__content { padding: 14px 16px; }
 }
