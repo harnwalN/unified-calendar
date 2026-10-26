@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
-import { isDone, useStore } from '../store';
+import { isDone, taskRef, useStore } from '../store';
 import { useAllEvents, useCalendarColor } from '../store/selectors';
 import { describeWhen } from '../lib/time';
 import type { CalEvent, SourceKind } from '../types';
@@ -17,7 +17,15 @@ export default function EventPopover() {
   const selectedId = useStore((s) => s.selectedEventId);
   const all = useAllEvents();
   const event = useMemo(() => (selectedId ? all.find((e) => e.id === selectedId) : undefined), [all, selectedId]);
-  if (!event) return null;
+  const assignmentUid = event?.kind === 'assignment' ? event.uid : undefined;
+  // Assignments are tasks: open them in the TaskDetail drawer instead.
+  useEffect(() => {
+    if (!assignmentUid) return;
+    const s = useStore.getState();
+    s.selectEvent(null);
+    s.selectTask(taskRef.assignment(assignmentUid));
+  }, [assignmentUid]);
+  if (!event || assignmentUid) return null;
   return <PopoverCard event={event} />;
 }
 
