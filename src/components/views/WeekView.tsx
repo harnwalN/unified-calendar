@@ -1,4 +1,16 @@
-// STUB – replaced by its owning worker.
+import { useMemo } from 'react';
+import { useStore } from '../../store';
+import { visibleDays } from '../../lib/time';
+import { useNarrowDays } from '../hooks';
+import TimeGrid from './TimeGrid';
+
 export default function WeekView() {
-  return <div className="view-placeholder">WeekView</div>;
+  const cursor = useStore((s) => s.cursor);
+  const weekStartsOn = useStore((s) => s.settings.weekStartsOn);
+  const narrowDays = useNarrowDays();
+  const days = useMemo(
+    () => visibleDays('week', new Date(cursor), weekStartsOn, narrowDays),
+    [cursor, weekStartsOn, narrowDays],
+  );
+  return <TimeGrid days={days} />;
 }
