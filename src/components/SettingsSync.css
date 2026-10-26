@@ -1,0 +1,20 @@
+.sync-choice { padding: 0; min-height: 0; }
+.sync-choice label {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 12px 14px; min-height: 60px; cursor: pointer;
+}
+.sync-choice label:hover { background: var(--surface-2); }
+.sync-choice input {
+  flex: none; width: 20px; height: 20px; margin: 0;
+  accent-color: var(--primary); cursor: pointer;
+}
+.sync-choice input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sync-choice input:disabled, .sync-choice input:disabled + .s-item__main { cursor: default; opacity: .6; }
+.sync-choice .s-item__main { display: flex; flex-direction: column; }
+
+.sync-status-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap;
+  font-size: 13px; color: var(--text-2);
+}
+.sync-status-row .s-status .material-symbols-outlined { font-size: 18px; color: var(--success); }
+.sync-status-row__actions { display: flex; gap: 8px; flex-wrap: wrap; }

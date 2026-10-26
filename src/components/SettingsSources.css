@@ -1,0 +1,15 @@
+/* Gradescope + PrairieLearn settings sections. */
+.src-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; }
+.src-links a, .s-item__actions a.s-icon-btn { text-decoration: none; }
+.src-hint { display: block; margin-top: 6px; font-size: 12px; color: var(--text-3); }
+.s-steps li > span { min-width: 0; }
+
+.src-bookmarklet { cursor: grab; text-decoration: none; }
+.src-bookmarklet:active { cursor: grabbing; }
+
+.src-icon {
+  width: 36px; height: 36px; flex: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--primary-container); color: var(--on-primary-container);
+}
+.src-icon .material-symbols-outlined { font-size: 20px; }

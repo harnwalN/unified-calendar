@@ -15,7 +15,8 @@ export default function SettingsPrivacy() {
           <b>Your data stays in this browser.</b> Your settings, feed links and cached events are stored only on this
           device. Calendar data goes straight from Google, Canvas and your feeds to this page – there is no app database,
           no analytics and no ads. Google sign-in passes through a tiny helper server only to issue tokens; nothing is
-          stored there.{' '}
+          stored there. If you turn on <b>Sync</b>, your tasks, plans, notes and time logs are also saved to a hidden app
+          folder in your own Google Drive.{' '}
           <a className="s-link" href={`${import.meta.env.BASE_URL}privacy.html`} target="_blank" rel="noreferrer">
             Read the privacy policy
           </a>
