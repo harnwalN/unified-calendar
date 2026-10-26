@@ -10,7 +10,7 @@ function isTyping(target: EventTarget | null): boolean {
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
 }
 
-/** Global Google-Calendar-style keyboard shortcuts. */
+/** Global shortcuts: `c` calendar, `n` quick add, `/` search; the rest act on the expanded calendar. */
 export function useShortcuts(focusSearch: () => void, narrowDays: number | undefined) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -28,9 +28,11 @@ export function useShortcuts(focusSearch: () => void, narrowDays: number | undef
 
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       const cursor = new Date(s.cursor);
-      if (VIEW_KEYS[key]) s.setView(VIEW_KEYS[key]);
+      if (key === 'c') s.setCalendarOpen(!s.calendarOpen);
+      else if (key === 'n') document.getElementById('quick-add-input')?.focus();
+      else if (VIEW_KEYS[key]) s.setView(VIEW_KEYS[key]);
       else if (key === 't') s.setCursor(new Date());
-      else if (key === 'j' || key === 'n' || key === 'ArrowRight') s.setCursor(stepCursor(s.view, cursor, 1, narrowDays));
+      else if (key === 'j' || key === 'ArrowRight') s.setCursor(stepCursor(s.view, cursor, 1, narrowDays));
       else if (key === 'k' || key === 'p' || key === 'ArrowLeft') s.setCursor(stepCursor(s.view, cursor, -1, narrowDays));
       else if (key === '/') focusSearch();
       else return;
