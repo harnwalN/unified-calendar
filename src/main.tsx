@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 // Global styles first so component stylesheets (imported by App) win ties in the cascade.
 import './styles/tokens.css';
@@ -10,8 +10,18 @@ if (import.meta.env.DEV && new URLSearchParams(location.search).has('mock')) {
   void import('./dev/mockEvents').then((m) => m.loadMockData());
 }
 
+// Dev-only visual feedback toolbar; lazy so it never lands in the production bundle.
+const Agentation = import.meta.env.DEV
+  ? lazy(() => import('agentation').then((m) => ({ default: m.Agentation })))
+  : null;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    {Agentation && (
+      <Suspense fallback={null}>
+        <Agentation />
+      </Suspense>
+    )}
   </StrictMode>,
 );

@@ -29,6 +29,11 @@ export default defineConfig({
       },
     }),
   ],
+  // Pre-bundle the lazily imported dev toolbar at startup; discovering it mid-session
+  // re-optimizes deps and briefly loads two copies of React ("Invalid hook call").
+  optimizeDeps: {
+    include: ['agentation'],
+  },
   test: {
     environment: 'jsdom',
   },
