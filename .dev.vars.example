@@ -1,0 +1,6 @@
+# Copy to worker/.dev.vars for `npm run worker:dev` (wrangler reads .dev.vars next to wrangler.toml).
+# Values here override [vars] in worker/wrangler.toml. Never commit the real file.
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+# Optional: override allowed origins for local testing.
+# ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173
