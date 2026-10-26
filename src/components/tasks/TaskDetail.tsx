@@ -7,7 +7,7 @@ import type { Priority, TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
 import { safeHref } from '../eventText';
 import TaskTimeEntries from '../time/TaskTimeEntries';
-import { dueLabel, formatDuration, formatEstimate, openLinkLabel } from './format';
+import { dueLabel, formatDuration, formatEstimate, openLinkLabel, relativeDue } from './format';
 import { PRIORITY_LABEL, STATUS_LABEL, StatusCheck, useTaskColor } from './TaskRow';
 import './TaskDetail.css';
 
@@ -154,7 +154,8 @@ function Drawer({ task, onDeleted }: { task: TaskView; onDeleted: (id: string, t
           {(task.timeTotalMs > 0 || live > 0) && (
             <p className="td-tracked">
               <Icon name="timer" size={16} />
-              {formatDuration(task.timeTodayMs + live)} today · {formatDuration(task.timeTotalMs + live)} total
+              {task.timeTodayMs + live > 0 && `${formatDuration(task.timeTodayMs + live)} today · `}
+              {formatDuration(task.timeTotalMs + live)} total
             </p>
           )}
 
@@ -197,7 +198,7 @@ function Drawer({ task, onDeleted }: { task: TaskView; onDeleted: (id: string, t
             ) : task.due ? (
               <p className={`td-static${dueLabel(task.due, now).overdue && task.status !== 'done' ? ' overdue' : ''}`}>
                 {format(new Date(task.due), 'EEEE, MMM d · h:mm a')}
-                <span className="td-sub"> ({dueLabel(task.due, now).text})</span>
+                <span className="td-sub"> ({relativeDue(task.due, now)})</span>
               </p>
             ) : (
               <p className="td-static">No due date</p>

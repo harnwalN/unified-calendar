@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dayLoads, fitsGap, freeMinutes, groupTasks, isTodayTask } from './grouping';
-import { doDateLabel, dueLabel, formatDuration, openLinkLabel } from './format';
+import { doDateLabel, dueLabel, formatDuration, openLinkLabel, relativeDue } from './format';
 import type { CalEvent, ClassInfo, TaskView } from '../../types';
 
 // Monday, Oct 26 2026, 2:00 PM local. Week (Sun start) = Oct 25 – Oct 31.
@@ -213,5 +213,14 @@ describe('format helpers', () => {
     expect(openLinkLabel('https://us.prairielearn.com/pl/course_instance/1')).toBe('Open in PrairieLearn');
     expect(openLinkLabel('https://example.com')).toBe('Open link');
     expect(openLinkLabel('not a url')).toBe('Open link');
+  });
+});
+
+describe('relativeDue', () => {
+  const now = new Date(2026, 9, 26, 12);
+  it('uses short labels within a week and day counts beyond', () => {
+    expect(relativeDue(new Date(2026, 9, 30, 23, 59).toISOString(), now)).toBe('Fri');
+    expect(relativeDue(new Date(2026, 10, 13, 23, 59).toISOString(), now)).toBe('in 18 days');
+    expect(relativeDue(new Date(2026, 9, 24, 23, 59).toISOString(), now)).toBe('2 days ago');
   });
 });

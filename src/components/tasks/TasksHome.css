@@ -15,16 +15,15 @@
 }
 
 /* ---- banner ---- */
+/* SceneryBanner owns layout (column, content bottom-left over its legibility scrim). */
 .home-banner {
   position: relative;
-  display: flex;
-  align-items: flex-end;
   min-height: 140px;
   border-radius: var(--radius-xl);
   background: var(--surface-2);
   overflow: hidden;
 }
-.home-greeting { position: relative; padding: 20px 24px; }
+.home-greeting { position: relative; }
 .home-greeting h1 {
   margin: 0;
   font-family: var(--font);
@@ -183,7 +182,6 @@
 @media (max-width: 599px) {
   .th-inner { gap: 12px; padding: 12px 12px 96px; }
   .home-banner { min-height: 110px; border-radius: var(--radius-l); }
-  .home-greeting { padding: 14px 16px; }
   .home-greeting h1 { font-size: 20px; line-height: 26px; }
   .home-date { display: block; font-size: 15px; line-height: 20px; }
   .home-sep { display: none; }
