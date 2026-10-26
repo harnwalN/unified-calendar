@@ -24,6 +24,12 @@ export function dueLabel(dueIso: string, now: Date): { text: string; overdue: bo
   return { text: isEndOfDay(due) ? day : `${day} ${timeOf(due)}`, overdue };
 }
 
+/** Relative companion to an absolute due date: "Today 5 PM", "Fri", "2 days ago", "in 18 days". */
+export function relativeDue(dueIso: string, now: Date): string {
+  const days = differenceInCalendarDays(new Date(dueIso), now);
+  return days >= 7 ? `in ${days} days` : dueLabel(dueIso, now).text;
+}
+
 /** "Plan: Wed" / "Plan: Today" for a `yyyy-MM-dd` do-date. */
 export function doDateLabel(doDate: string, now: Date): string {
   const d = parseISO(doDate);
