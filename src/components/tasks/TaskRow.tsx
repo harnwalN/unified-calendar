@@ -6,6 +6,8 @@ import type { Priority, TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
 import { doDateLabel, dueLabel, formatDuration, formatEstimate } from './format';
 import { deleteTaskWithUndo } from './TaskDetail';
+import ScheduleForm from './ScheduleForm';
+import { format } from 'date-fns';
 import './TaskRow.css';
 
 const LONG_PRESS_MS = 500;
@@ -43,6 +45,7 @@ export default function TaskRow({ task, now, showClass = true, highlight }: Prop
   const tracked = task.timeTodayMs + live;
   const subDone = task.subtasks.filter((s) => s.done).length;
   const plannedToday = task.doDate === dayKey(now);
+  const nextBlock = task.blocks?.find((b) => Date.parse(b.start) + b.durationMin * 60_000 > now.getTime());
 
   // Anywhere on the row opens details, except its own controls.
   const open = (e: MouseEvent) => {
@@ -82,6 +85,12 @@ export default function TaskRow({ task, now, showClass = true, highlight }: Prop
           {task.doDate && !done && (
             <span className={`task-plan${plannedToday ? ' today' : ''}`}>Plan: {doDateLabel(task.doDate, now)}</span>
           )}
+          {nextBlock && !done && (
+            <span className="task-plan scheduled" title="Next scheduled work session">
+              <Icon name="event_available" size={15} />
+              {nextBlockLabel(nextBlock.start, now)}
+            </span>
+          )}
           {task.subtasks.length > 0 && (
             <span className="task-sub" title={`${subDone} of ${task.subtasks.length} subtasks done`}>
               <Icon name="checklist" size={15} />
@@ -110,6 +119,7 @@ export default function TaskRow({ task, now, showClass = true, highlight }: Prop
         >
           <Icon name={running ? 'stop' : 'play_arrow'} />
         </button>
+        {!done && <ScheduleButton task={task} />}
         <RowMenu task={task} />
       </div>
     </li>
@@ -161,6 +171,50 @@ export function StatusCheck({ task, size = 'm' }: { task: TaskView; size?: 's' |
     >
       {task.status === 'done' && <Icon name="check" />}
     </button>
+  );
+}
+
+/** "Today 2:00 PM" / "Wed 2:00 PM" / "Nov 3 2:00 PM" for the next work session. */
+function nextBlockLabel(startIso: string, now: Date): string {
+  const d = new Date(startIso);
+  const day = dayKey(d) === dayKey(now) ? 'Today' : d.getTime() - now.getTime() < 6 * 86_400_000 ? format(d, 'EEE') : format(d, 'MMM d');
+  return `${day} ${format(d, 'h:mm a')}`;
+}
+
+function ScheduleButton({ task }: { task: TaskView }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, [open]);
+  return (
+    <div className="task-menu" ref={ref}>
+      <button
+        className="icon-btn small task-schedule"
+        onClick={() => setOpen(!open)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={`Schedule time for ${task.title}`}
+        title="Schedule work time"
+      >
+        <Icon name="edit_calendar" />
+      </button>
+      {open && (
+        <div className="sched-pop" role="dialog" aria-label={`Schedule ${task.title}`}>
+          <p className="sched-pop-title">Schedule “{task.title}”</p>
+          <ScheduleForm task={task} onScheduled={() => setOpen(false)} />
+        </div>
+      )}
+    </div>
   );
 }
 

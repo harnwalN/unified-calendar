@@ -132,6 +132,7 @@ export function buildTaskViews(
       notes: m?.notes,
       subtasks: m?.subtasks ?? [],
       estimateMin: m?.estimateMin,
+      blocks: m?.blocks,
       timeTodayMs: today.get(ref) ?? 0,
       timeTotalMs: total.get(ref) ?? 0,
     });
@@ -154,6 +155,7 @@ export function buildTaskViews(
       notes: t.notes,
       subtasks: t.subtasks,
       estimateMin: t.estimateMin,
+      blocks: t.blocks,
       timeTodayMs: today.get(ref) ?? 0,
       timeTotalMs: total.get(ref) ?? 0,
     });

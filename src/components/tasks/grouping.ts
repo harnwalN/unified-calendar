@@ -61,11 +61,12 @@ export function isOverdue(t: Pick<TaskView, 'due' | 'status'>, now: Date): boole
   return t.status !== 'done' && !!t.due && Date.parse(t.due) < now.getTime();
 }
 
-/** Today: not done and overdue (recently), due today, or planned (do-date) for today or earlier. */
+/** Today: not done and overdue (recently), due today, planned (do-date) for today or earlier, or scheduled today. */
 export function isTodayTask(t: TaskView, now: Date): boolean {
   if (t.status === 'done') return false;
   const today = dayKey(now);
   if (t.doDate && t.doDate <= today) return true;
+  if (t.blocks?.some((b) => dayKey(b.start) === today)) return true;
   if (!t.due) return false;
   const due = Date.parse(t.due);
   if (due >= addDays(startOfDay(now), 1).getTime()) return false;

@@ -61,3 +61,8 @@
   .start-timer-btn { width: 40px; padding: 0; justify-content: center; }
   .start-timer-label { display: none; }
 }
+/* The expanded calendar needs the top bar for its date navigation. */
+@media (max-width: 1500px) {
+  .topbar.calendar .start-timer-btn { width: 40px; padding: 0; justify-content: center; }
+  .topbar.calendar .start-timer-label { display: none; }
+}

@@ -114,6 +114,14 @@ export interface Subtask {
   done: boolean;
 }
 
+/** A scheduled work session for a task ("work on PA 3 Wed 2–3:30 PM"). */
+export interface WorkBlock {
+  id: string;
+  /** ISO start. */
+  start: string;
+  durationMin: number;
+}
+
 /** Planning fields shared by Canvas/PrairieLearn assignments and personal tasks. */
 export interface TaskFields {
   status: TaskStatus;
@@ -124,6 +132,8 @@ export interface TaskFields {
   subtasks: Subtask[];
   /** Estimated effort in minutes. */
   estimateMin?: number;
+  /** Scheduled work sessions, possibly on several days. Shown on the calendar. */
+  blocks?: WorkBlock[];
 }
 
 /** User overlay on an assignment that comes from a feed. Keyed by `CalEvent.uid`. */
