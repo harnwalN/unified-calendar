@@ -9,6 +9,9 @@ import { htmlToText, localDate } from './text';
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
 const SCOPES = `openid email profile ${CALENDAR_SCOPE}`;
+export const DRIVE_APPDATA_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+/** localStorage map `accountId → granted scopes` (GoogleAccount has no field for it). */
+const GRANTED_SCOPES_KEY = 'unified-calendar:granted-scopes';
 const API = 'https://www.googleapis.com/calendar/v3';
 const TOKEN_MIN_LIFETIME_MS = 60_000;
 
@@ -33,6 +36,7 @@ interface CodeClientConfig {
   prompt?: string;
   hint?: string;
   login_hint?: string;
+  include_granted_scopes?: boolean;
 }
 interface CodeClient {
   requestCode(): void;
@@ -83,13 +87,14 @@ async function workerPost<T>(path: string, body: unknown): Promise<{ status: num
   return { status: res.status, data };
 }
 
-function requestCode(loginHint?: string): Promise<CodeResponse> {
+function requestCode(loginHint?: string, extraScopes: string[] = []): Promise<CodeResponse> {
   return new Promise((resolve, reject) => {
     const oauth2 = window.google?.accounts?.oauth2;
     if (!oauth2) return reject(new Error('Google sign-in failed to initialise.'));
     const client = oauth2.initCodeClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: SCOPES,
+      scope: [SCOPES, ...extraScopes].join(' '),
+      include_granted_scopes: true,
       ux_mode: 'popup',
       // consent guarantees Google issues a refresh token even if the app was authorised before
       prompt: 'consent select_account',
@@ -117,12 +122,47 @@ interface ExchangeResponse {
   profile: { sub: string; email?: string; name?: string; picture?: string };
 }
 
-export async function connectGoogleAccount(loginHint?: string): Promise<GoogleAccount> {
+// ---- granted scopes (per account, this device) ----
+
+function readGrantedScopes(): Record<string, string[]> {
+  try {
+    const v = JSON.parse(localStorage.getItem(GRANTED_SCOPES_KEY) ?? '{}') as unknown;
+    return v && typeof v === 'object' ? (v as Record<string, string[]>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeGrantedScopes(accountId: string, scopes: string[] | null): void {
+  const all = readGrantedScopes();
+  if (scopes) all[accountId] = scopes;
+  else delete all[accountId];
+  try {
+    localStorage.setItem(GRANTED_SCOPES_KEY, JSON.stringify(all));
+  } catch {
+    // Storage full/blocked: we'll just ask for consent again.
+  }
+}
+
+/** True if the account granted `scope` the last time it signed in on this device. */
+export function hasGrantedScope(accountId: string, scope: string): boolean {
+  return readGrantedScopes()[accountId]?.includes(scope) ?? false;
+}
+
+/**
+ * Sign in (or re-consent) a Google account. `extraScopes` are requested on top of the calendar
+ * scopes via incremental consent; throws if one of them isn't granted.
+ */
+export async function connectGoogleAccount(loginHint?: string, extraScopes: string[] = []): Promise<GoogleAccount> {
   requireConfig();
   await loadGoogleIdentity();
-  const resp = await requestCode(loginHint);
-  if (resp.scope && !resp.scope.split(' ').includes(CALENDAR_SCOPE)) {
+  const resp = await requestCode(loginHint, extraScopes);
+  const granted = resp.scope?.split(' ');
+  if (granted && !granted.includes(CALENDAR_SCOPE)) {
     throw new Error('Calendar access was not granted. Please tick the calendar permission and try again.');
+  }
+  if (granted && extraScopes.some((s) => !granted.includes(s))) {
+    throw new Error('The extra permission was not granted. Please tick it on the Google consent screen and try again.');
   }
   const { status, data } = await workerPost<ExchangeResponse>('/google/exchange', { code: resp.code });
   if (status !== 200 || !data.refresh_token) throw new Error(data.error || `Sign-in failed (${status}).`);
@@ -137,6 +177,8 @@ export async function connectGoogleAccount(loginHint?: string): Promise<GoogleAc
     accessTokenExpiry: Date.now() + data.expires_in * 1000,
     needsReconnect: false,
   };
+  // Without a `scope` field in the response, assume the requested scopes were granted.
+  writeGrantedScopes(account.id, granted ?? [SCOPES, ...extraScopes].join(' ').split(' '));
   useStore.getState().upsertAccount(account);
   await syncSource(sourceKeyFor.google(account.id));
   return account;
@@ -148,7 +190,10 @@ export async function disconnectGoogleAccount(accountId: string): Promise<void> 
     // Revoking the refresh token also invalidates its access tokens.
     await workerPost('/google/revoke', { token: account.refreshToken }).catch(() => undefined);
   }
-  useStore.getState().removeAccount(accountId);
+  const { settings, updateSettings, removeAccount } = useStore.getState();
+  if (settings.syncAccountId === accountId) updateSettings({ syncAccountId: undefined });
+  writeGrantedScopes(accountId, null);
+  removeAccount(accountId);
   await deleteSourceEvents(sourceKeyFor.google(accountId)).catch(() => undefined);
 }
 
@@ -230,11 +275,11 @@ interface CalendarListEntry {
   backgroundColor?: string;
   selected?: boolean;
 }
-interface GEventTime {
+export interface GEventTime {
   date?: string;
   dateTime?: string;
 }
-interface GEvent {
+export interface GEvent {
   id: string;
   status?: string;
   summary?: string;
@@ -262,13 +307,43 @@ async function listAll<T>(accountId: string, baseUrl: string): Promise<T[]> {
   return out;
 }
 
+// ---- Gradescope (deadlines written to Google Calendar by the "Gradescope to Cal" extension) ----
+
+const GRADESCOPE_URL_RE = /https?:\/\/(?:www\.)?gradescope\.com\/[^\s<>"')\]]*/i;
+// Course code like "CSE 110" / "MATH20C", but not an assignment label like "HW 3" or "PA2".
+const COURSE = '(?!(?:HW|PA|PS|MP|WA|LAB|QUIZ|EXAM|PROJ|PROJECT|PART)\\s?-?\\d)[A-Z]{2,5}\\s?-?\\d{1,4}[A-Z]{0,3}';
+const TITLE_PATTERNS: { re: RegExp; title: number; course: number }[] = [
+  { re: /^\[([^\]]+)\]\s*[-:]?\s*(.+)$/, course: 1, title: 2 }, // [CSE 110] HW 3
+  { re: new RegExp(`^(${COURSE}[^:]*):\\s*(.+)$`), course: 1, title: 2 }, // CSE 110: HW 3
+  { re: new RegExp(`^(.+?)\\s*\\((${COURSE}[^)]*)\\)$`), title: 1, course: 2 }, // HW 3 (CSE 110)
+  { re: new RegExp(`^(${COURSE})\\s+[-–—|]\\s+(.+)$`), course: 1, title: 2 }, // CSE 110 - HW 3
+  { re: new RegExp(`^(.+?)\\s+[-–—|]\\s+(${COURSE}.*)$`), title: 1, course: 2 }, // HW 3 - CSE 110
+];
+
+/** Splits a Gradescope deadline title into assignment title + course, if the title names one. */
+export function splitGradescopeTitle(summary: string): { title: string; course?: string } {
+  const s = summary.trim();
+  for (const p of TITLE_PATTERNS) {
+    const m = p.re.exec(s);
+    if (m && m[p.title].trim() && m[p.course].trim()) return { title: m[p.title].trim(), course: m[p.course].trim() };
+  }
+  return { title: s };
+}
+
+/** "Gradescope – CSE 110" → "CSE 110"; undefined when nothing is left. */
+function courseFromCalendarName(name: string): string | undefined {
+  const rest = name.replace(/gradescope/gi, '').replace(/^[\s\-–—:|()[\]]+|[\s\-–—:|()[\]]+$/g, '');
+  return rest || undefined;
+}
+
 function parseGoogleTime(t: GEventTime | undefined): Date | null {
   if (t?.dateTime) return new Date(t.dateTime);
   if (t?.date) return localDate(t.date);
   return null;
 }
 
-export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: string): CalEvent | null {
+/** `calendarName` lets Gradescope deadlines be recognized by the calendar they live in. */
+export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: string, calendarName = ''): CalEvent | null {
   if (ev.status === 'cancelled') return null;
   const start = parseGoogleTime(ev.start);
   if (!start) return null;
@@ -276,7 +351,7 @@ export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: stri
   let end = parseGoogleTime(ev.end) ?? start;
   if (allDay && end <= start) end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
   const uid = `${googleCalId}:${ev.id}`;
-  return {
+  const base: CalEvent = {
     // uid is stable per Google calendar; id is also unique when two accounts share a calendar.
     id: `${calendarId}:${ev.id}`,
     uid,
@@ -289,6 +364,23 @@ export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: stri
     description: ev.description ? htmlToText(ev.description) || undefined : undefined,
     url: ev.htmlLink,
     kind: 'event',
+  };
+
+  const gsUrl = GRADESCOPE_URL_RE.exec(`${ev.description ?? ''} ${ev.location ?? ''}`)?.[0];
+  if (!gsUrl && !/gradescope/i.test(calendarName)) return base;
+
+  // Point deadline like Canvas: a timed "due" event often spans up to the deadline, so use its end.
+  const due = allDay ? new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59) : end;
+  const { title, course } = splitGradescopeTitle(base.title);
+  return {
+    ...base,
+    title,
+    course: course ?? courseFromCalendarName(calendarName),
+    start: due.toISOString(),
+    end: due.toISOString(),
+    allDay: false,
+    url: gsUrl ?? base.url,
+    kind: 'assignment',
   };
 }
 
@@ -326,7 +418,7 @@ export async function fetchGoogleSource(
           accountId,
           `${API}/calendars/${encodeURIComponent(c.id)}/events?${params}`,
         );
-        return items.flatMap((ev) => mapGoogleEvent(ev, calendars[i].id, c.id) ?? []);
+        return items.flatMap((ev) => mapGoogleEvent(ev, calendars[i].id, c.id, calendars[i].name) ?? []);
       } catch (err) {
         // One inaccessible calendar (e.g. unshared since listing) shouldn't fail the account.
         if (err instanceof GoogleApiError && (err.status === 403 || err.status === 404)) return [];
