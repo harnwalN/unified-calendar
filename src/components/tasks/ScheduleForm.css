@@ -1,0 +1,71 @@
+.sched { display: flex; flex-direction: column; gap: 12px; }
+.sched-days { display: flex; align-items: center; gap: 4px; }
+.sched-day {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  cursor: pointer;
+}
+.sched-day:hover { background: var(--surface-3); }
+.sched-day.on { border-color: var(--primary); background: var(--primary-container); color: var(--on-primary-container); }
+.sched-day.due { box-shadow: inset 0 -3px 0 var(--danger); }
+.sched-wd { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: inherit; opacity: .8; }
+.sched-num { font-family: var(--font); font-size: 16px; font-weight: 500; }
+
+.sched-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.sched-time { display: inline-flex; align-items: center; gap: 8px; color: var(--text-2); }
+.sched-time input {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+}
+.sched-durs { display: flex; flex-wrap: wrap; gap: 6px; }
+.sched-chip {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.sched-chip.on { border-color: var(--primary); background: var(--primary-container); color: var(--on-primary-container); }
+.sched-custom input {
+  width: 64px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.sched-go { align-self: flex-start; }
+.sched-go:disabled { opacity: .5; cursor: default; }
+
+.sched-list ul { margin: 4px 0 0; padding: 0; list-style: none; }
+.sched-list li { display: flex; align-items: center; gap: 8px; min-height: 36px; color: var(--text); }
+.sched-list li > span { flex: 1; }
+.sched-list li > .material-symbols-outlined { color: var(--text-3); }
+.sched-summary { margin: 0; font-size: 13px; color: var(--text-2); }
+
+/* Popover version (task row quick action). */
+.sched-pop {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 4px);
+  right: 0;
+  width: min(440px, calc(100vw - 24px));
+  padding: 14px;
+  border-radius: var(--radius-l);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-2);
+  animation: pop-in .12s ease-out;
+}
+.sched-pop-title { margin: 0 0 10px; font-family: var(--font); font-size: 15px; font-weight: 500; }

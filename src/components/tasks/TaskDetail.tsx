@@ -7,6 +7,7 @@ import type { Priority, TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
 import { safeHref } from '../eventText';
 import TaskTimeEntries from '../time/TaskTimeEntries';
+import ScheduleForm from './ScheduleForm';
 import { dueLabel, formatDuration, formatEstimate, openLinkLabel, relativeDue } from './format';
 import { PRIORITY_LABEL, STATUS_LABEL, StatusCheck, useTaskColor } from './TaskRow';
 import './TaskDetail.css';
@@ -246,6 +247,10 @@ function Drawer({ task, onDeleted }: { task: TaskView; onDeleted: (id: string, t
                 </button>
               )}
             </div>
+          </Field>
+
+          <Field label="Schedule work time">
+            <ScheduleForm task={task} />
           </Field>
 
           <Field label="Estimate" htmlFor="td-est">

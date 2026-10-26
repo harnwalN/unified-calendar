@@ -136,3 +136,5 @@
   .task-row + .task-row::before { left: 40px; }
   .task-menu { display: none; }
 }
+
+.task-plan.scheduled { display: inline-flex; align-items: center; gap: 3px; background: none; color: var(--success); padding: 0; }
