@@ -1,0 +1,5 @@
+/* App layout shell. Owned by the UI worker; component-specific styles live next to components. */
+.app { display: flex; flex-direction: column; height: 100%; }
+.app-body { flex: 1; display: flex; min-height: 0; }
+.app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.view-placeholder { padding: 24px; color: var(--text-3); }

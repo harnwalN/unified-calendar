@@ -1,0 +1,116 @@
+/* Design tokens (Google Calendar / Material 3 feel). Shared by every component – do not
+   hard-code colors elsewhere; add a token here instead. */
+:root {
+  color-scheme: light;
+  --font: 'Google Sans', 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f8fafd;          /* sidebar, chips */
+  --surface-3: #f1f3f4;          /* hover */
+  --surface-elevated: #ffffff;   /* popovers, dialogs */
+  --text: #1f1f1f;
+  --text-2: #444746;
+  --text-3: #70757a;
+  --border: #dadce0;
+  --border-soft: #e8eaed;
+  --primary: #0b57d0;
+  --primary-container: #c2e7ff;
+  --on-primary: #ffffff;
+  --on-primary-container: #001d35;
+  --now: #ea4335;                /* current-time line */
+  --today-bg: #0b57d0;
+  --today-fg: #ffffff;
+  --danger: #b3261e;
+  --success: #188038;
+  --shadow-1: 0 1px 2px rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+  --shadow-2: 0 4px 8px 3px rgba(60, 64, 67, .15), 0 1px 3px rgba(60, 64, 67, .3);
+  --scrim: rgba(32, 33, 36, .4);
+
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-l: 16px;
+  --radius-xl: 28px;
+  --topbar-h: 64px;
+  --sidebar-w: 256px;
+  --hour-h: 48px;                /* height of one hour in day/week grids */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #1b1b1b;
+    --surface: #1f1f1f;
+    --surface-2: #282a2c;
+    --surface-3: #333537;
+    --surface-elevated: #2d2f31;
+    --text: #e3e3e3;
+    --text-2: #c4c7c5;
+    --text-3: #9aa0a6;
+    --border: #444746;
+    --border-soft: #333537;
+    --primary: #a8c7fa;
+    --primary-container: #004a77;
+    --on-primary: #062e6f;
+    --on-primary-container: #c2e7ff;
+    --now: #f28b82;
+    --today-bg: #a8c7fa;
+    --today-fg: #062e6f;
+    --danger: #f2b8b5;
+    --success: #81c995;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .6), 0 1px 3px 1px rgba(0, 0, 0, .3);
+    --shadow-2: 0 4px 8px 3px rgba(0, 0, 0, .4), 0 1px 3px rgba(0, 0, 0, .6);
+    --scrim: rgba(0, 0, 0, .6);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #1b1b1b;
+  --surface: #1f1f1f;
+  --surface-2: #282a2c;
+  --surface-3: #333537;
+  --surface-elevated: #2d2f31;
+  --text: #e3e3e3;
+  --text-2: #c4c7c5;
+  --text-3: #9aa0a6;
+  --border: #444746;
+  --border-soft: #333537;
+  --primary: #a8c7fa;
+  --primary-container: #004a77;
+  --on-primary: #062e6f;
+  --on-primary-container: #c2e7ff;
+  --now: #f28b82;
+  --today-bg: #a8c7fa;
+  --today-fg: #062e6f;
+  --danger: #f2b8b5;
+  --success: #81c995;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .6), 0 1px 3px 1px rgba(0, 0, 0, .3);
+  --shadow-2: 0 4px 8px 3px rgba(0, 0, 0, .4), 0 1px 3px rgba(0, 0, 0, .6);
+  --scrim: rgba(0, 0, 0, .6);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+}
