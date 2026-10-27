@@ -14,7 +14,7 @@ declare global {
 }
 
 export const FLOATING_ROOT_ID = 'floating-root';
-const SIZE = { width: 340, height: 480 };
+const SIZE = { width: 300, height: 440 };
 
 let current: Window | null = null;
 const listeners = new Set<() => void>();
