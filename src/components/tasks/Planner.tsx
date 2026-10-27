@@ -115,6 +115,7 @@ export default function Planner() {
   );
 }
 
+const classMs = (d: DayData) => d.spans.reduce((sum, s) => sum + (s.className ? s.end - s.start : 0), 0);
 const trackedMs = (d: DayData) => d.tracked.reduce((sum, s) => sum + (s.end - s.start), 0);
 
 function DayMode({ data, now }: { data: DayData; now: number }) {
@@ -142,6 +143,7 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
     const parts = [
       data.spans.length ? `${data.spans.length} event${data.spans.length === 1 ? '' : 's'}` : 'No events',
       data.due.length ? `${data.due.length} due` : '',
+      classMs(data) >= 60_000 ? `${formatDuration(classMs(data))} in class` : '',
       tracked >= 60_000 ? `${formatDuration(tracked)} tracked` : '',
     ].filter(Boolean);
     status = parts.join(' · ');

@@ -6,12 +6,15 @@ import { useTasks } from '../../store/tasks';
 import { PLANNED_CALENDAR_ID, useVisibleEvents } from '../../store/selectors';
 import { useTaskLabeler } from '../../features/timer';
 import type { CalEvent, TaskRef, TaskView } from '../../types';
+import { useClassMatcher } from '../../features/classMeetings';
 import { eventColors, type Span } from './timeline';
 
 export interface EventSpan extends Span {
   event: CalEvent;
   color: string;
   planned: boolean;
+  /** Name of the class this event is a meeting of (lecture, lab…), if any. */
+  className?: string;
 }
 
 export interface TrackedSpan extends Span {
@@ -40,6 +43,7 @@ export function usePlannerData(now: number): (date: Date | number) => DayData {
   const entries = useStore((s) => s.timeEntries);
   const timer = useStore((s) => s.runningTimer);
   const label = useTaskLabeler();
+  const match = useClassMatcher();
 
   const prepared = useMemo(() => {
     const timed: EventSpan[] = [];
@@ -62,7 +66,12 @@ export function usePlannerData(now: number): (date: Date | number) => DayData {
     }
     // Scheduled work keeps its green; everything else gets a varied per-event color.
     const colors = eventColors(timed.filter((t) => !t.planned).map((t) => ({ id: t.id, title: t.event.title, start: t.start, end: t.end })));
-    for (const t of timed) t.color = colors.get(t.id) ?? t.color;
+    for (const t of timed) {
+      // Class meetings wear their class color so lectures read as "CSE 110" at a glance.
+      const m = t.planned ? null : match(t.event);
+      t.color = m ? m.cls.color : (colors.get(t.id) ?? t.color);
+      if (m) t.className = m.cls.name;
+    }
     const due = tasks.filter((t): t is DueTask => t.status !== 'done' && !!t.due);
     const tracked: TrackedSpan[] = Object.values(entries)
       .filter((e) => !e.deleted)
@@ -75,7 +84,7 @@ export function usePlannerData(now: number): (date: Date | number) => DayData {
       tracked.push({ id: 'running', ref: timer.taskRef, start: Date.parse(timer.start), end: now, color: l.color, title: l.title });
     }
     return { timed, allDay, due, tracked };
-  }, [events, tasks, calendars, entries, timer, label, now]);
+  }, [events, tasks, calendars, entries, timer, label, match, now]);
 
   return useCallback(
     (date: Date | number) => {
