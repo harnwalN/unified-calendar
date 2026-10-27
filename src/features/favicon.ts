@@ -62,6 +62,45 @@ ${timing ? '<circle cx="32" cy="12" r="3.5" fill="#fff"/>' : ''}
 
 export const svgDataUrl = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 
+/** The app's display font, as used across the UI (see --font in tokens.css). */
+const FONT = '"Google Sans", Roboto, Arial, sans-serif';
+
+/**
+ * Same tile as `faviconSvg`, drawn on a canvas so the number uses the page's loaded web font
+ * (an SVG favicon can't load fonts). Returns a PNG data URL, or null where canvas isn't available.
+ */
+export function faviconPng(date: Date, elapsedMs?: number): string | null {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 128;
+  const ctx = canvas.getContext?.('2d');
+  if (!ctx || typeof Path2D === 'undefined') return null;
+  const timing = elapsedMs !== undefined;
+  const color = timing ? TIMER_COLOR : timeOfDayColor(date);
+  const text = timing ? elapsedLabel(elapsedMs) : String(date.getDate());
+  const size = text.length <= 1 ? 40 : text.length === 2 ? 36 : text.length === 3 ? 28 : 23;
+  ctx.scale(2, 2);
+  const tile = new Path2D('M16 4h32a12 12 0 0 1 12 12v32a12 12 0 0 1-12 12H16A12 12 0 0 1 4 48V16A12 12 0 0 1 16 4z');
+  ctx.fillStyle = '#fff';
+  ctx.fill(tile);
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = color;
+  ctx.stroke(tile);
+  ctx.fillStyle = color;
+  ctx.fill(new Path2D('M4 16a12 12 0 0 1 12-12h32a12 12 0 0 1 12 12v4H4z'));
+  if (timing) {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(32, 12, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = color;
+  ctx.font = `600 ${size}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, 32, timing ? 50 : 52);
+  return canvas.toDataURL('image/png');
+}
+
 /**
  * Mount once in <App/>: keeps the tab icon on today's date in the current time-of-day color,
  * or on the running stopwatch's elapsed time while one is timing.
@@ -78,13 +117,20 @@ export function useDynamicFavicon(): void {
     let last = '';
     const update = () => {
       const now = new Date();
-      const svg = faviconSvg(now, timer ? Math.max(0, now.getTime() - Date.parse(timer.start)) : undefined);
+      const elapsed = timer ? Math.max(0, now.getTime() - Date.parse(timer.start)) : undefined;
+      const svg = faviconSvg(now, elapsed);
       if (svg === last) return;
       last = svg;
-      link!.type = 'image/svg+xml';
-      link!.href = svgDataUrl(svg);
+      const png = faviconPng(now, elapsed);
+      link!.type = png ? 'image/png' : 'image/svg+xml';
+      link!.href = png ?? svgDataUrl(svg);
     };
     update();
+    // Redraw once the UI font has loaded so the number isn't in a fallback font.
+    document.fonts?.load(`600 36px ${FONT}`).then(() => {
+      last = '';
+      update();
+    }, () => {});
     const id = setInterval(update, timer ? 5_000 : 60_000);
     document.addEventListener('visibilitychange', update);
     return () => {

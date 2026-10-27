@@ -1,5 +1,4 @@
 // Pure layout for the Today time bar: visible hour range, event lanes and percentages.
-import { startOfDay } from 'date-fns';
 
 const HOUR = 3_600_000;
 export const DEFAULT_RANGE: [number, number] = [7, 23];
@@ -10,18 +9,22 @@ export interface Span {
   end: number;
 }
 
-/** Hours [from, to) to show: the default waking day, widened to fit today's spans and `now`. */
-export function hourRange(spans: Span[], now: Date): [number, number] {
-  const day = startOfDay(now).getTime();
+/**
+ * Hours [from, to) to show for a day starting at `day`: the default waking day, widened to fit
+ * the spans and (when it falls on that day) the current time `now`.
+ */
+export function hourRange(spans: Span[], day: number, now?: number): [number, number] {
   let [from, to] = DEFAULT_RANGE;
   const hourOf = (t: number) => (t - day) / HOUR;
   for (const s of spans) {
     from = Math.min(from, Math.floor(Math.max(0, hourOf(s.start))));
     to = Math.max(to, Math.ceil(Math.min(24, hourOf(s.end))));
   }
-  const n = hourOf(now.getTime());
-  from = Math.min(from, Math.floor(n));
-  to = Math.max(to, Math.ceil(n + 0.01));
+  if (now !== undefined && now >= day && now < day + 24 * HOUR) {
+    const n = hourOf(now);
+    from = Math.min(from, Math.floor(n));
+    to = Math.max(to, Math.ceil(n + 0.01));
+  }
   return [Math.max(0, from), Math.min(24, to)];
 }
 

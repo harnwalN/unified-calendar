@@ -11,9 +11,8 @@ import { formatEstimate, greeting } from './format';
 import { useCollapsedSections, useHomeSections } from './useHomeData';
 import TaskRow from './TaskRow';
 import QuickAdd from './QuickAdd';
-import WeekStrip from './WeekStrip';
 import CalendarPanel from './CalendarPanel';
-import TodayBar from './TodayBar';
+import Planner from './Planner';
 import './TasksHome.css';
 
 export default function TasksHome() {
@@ -47,8 +46,7 @@ export default function TasksHome() {
           </div>
         </SceneryBanner>
 
-        <TodayBar />
-        <WeekStrip tasks={tasks} now={now} />
+        <Planner />
         {calendarOpen && <CalendarPanel />}
 
         <QuickAdd />
