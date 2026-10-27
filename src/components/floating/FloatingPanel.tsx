@@ -1,9 +1,12 @@
 // Floating mini window: running timer + today's tasks, visible while you work in other tabs.
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { format, startOfDay } from 'date-fns';
 import { useStore } from '../../store';
-import { dayKey, useTasks } from '../../store/tasks';
+import { dayKey, useClasses, useTasks } from '../../store/tasks';
+import { parseQuickAdd } from '../../lib/quickAdd';
+import SceneArt from '../scenery/SceneArt';
+import { skyState, useSceneClock, useSceneId, useSunLocation } from '../scenery/sky';
 import { useVisibleEvents } from '../../store/selectors';
 import { closeFloating, FLOATING_ROOT_ID, syncTheme, useFloatingWindow } from '../../features/floating';
 import { startTimer, stopTimer, toggleTimer, useTaskLabeler } from '../../features/timer';
@@ -15,7 +18,7 @@ import { useHomeSections } from '../tasks/useHomeData';
 import { rankTimerChoices, useRecentTimedRefs } from '../time/StartTimerMenu';
 import './FloatingPanel.css';
 
-const MAX_TASKS = 8;
+const MAX_TASKS = 6;
 const DAY = 86_400_000;
 
 export default function FloatingPanel() {
@@ -49,6 +52,7 @@ function MiniPanel({ win }: { win: Window }) {
 
   return (
     <div className="mini">
+      <MiniBackground win={win} />
       <header className="mini-head">
         <span className="mini-time">{format(now, 'h:mm a')}</span>
         <span className="mini-date">{format(now, 'EEE, MMM d')}</span>
@@ -63,6 +67,67 @@ function MiniPanel({ win }: { win: Window }) {
       <NextEvent now={now} />
       <TodayList now={now} />
     </div>
+  );
+}
+
+/** The same time-of-day landscape as the app, sized to the mini window. */
+function MiniBackground({ win }: { win: Window }) {
+  const scene = useSceneId();
+  const clock = useSceneClock();
+  const { loc } = useSunLocation();
+  const sky = useMemo(() => skyState(clock, loc), [clock, loc]);
+  const [size, setSize] = useState<[number, number]>(() => [win.innerWidth, win.innerHeight]);
+  useEffect(() => {
+    const onResize = () => setSize([win.innerWidth, win.innerHeight]);
+    win.addEventListener('resize', onResize);
+    return () => win.removeEventListener('resize', onResize);
+  }, [win]);
+  if (scene === 'off') return null;
+  return (
+    <div className={`mini-bg ${sky.palette.lightSky ? 'light-sky' : 'dark-sky'}`} aria-hidden="true">
+      <SceneArt scene={scene} sky={sky} fit="page" size={size} />
+    </div>
+  );
+}
+
+/** Quick add from the mini window; without a date it's planned for today so it shows up below. */
+function MiniAdd() {
+  const [text, setText] = useState('');
+  const classes = useClasses();
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    const now = new Date();
+    const p = parseQuickAdd(text, now, classes);
+    if (!p.title) return;
+    const doDate = p.doDate ?? (p.due ? undefined : dayKey(now));
+    useStore.getState().addTask({
+      title: p.title,
+      due: p.due,
+      doDate,
+      classId: p.list === 'quick' ? undefined : p.classId,
+      priority: p.priority,
+      estimateMin: p.estimateMin,
+      list: p.list,
+    });
+    setText('');
+  };
+  return (
+    <form className="mini-add" onSubmit={submit}>
+      <Icon name="add" size={18} />
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Add a task for today…"
+        aria-label="Add a task"
+        title="Same shortcuts as the app: fri 5pm, #CSE110, !high, ~30m"
+      />
+      {text.trim() && (
+        <button type="submit" className="mini-add-go" aria-label="Add task">
+          <Icon name="arrow_upward" size={18} />
+        </button>
+      )}
+    </form>
   );
 }
 
@@ -158,6 +223,7 @@ function TodayList({ now }: { now: Date }) {
       <h2>
         Today <span className="mini-count">{today.length}</span>
       </h2>
+      <MiniAdd />
       {shown.length === 0 ? (
         <p className="mini-none">Nothing due or planned for today.</p>
       ) : (

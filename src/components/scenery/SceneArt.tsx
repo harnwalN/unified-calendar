@@ -68,9 +68,23 @@ const LAND_H = 140;
  * `fit="cover"` scales the 1200×200 canvas to cover the box (banners, thumbnails); `fit="page"`
  * keeps the landscape in the lower part of a tall box and extends the sky above it.
  */
-function SceneArt({ scene, sky, className, fit = 'cover' }: { scene: SceneId; sky: SkyState; className?: string; fit?: 'cover' | 'page' }) {
+function SceneArt({
+  scene,
+  sky,
+  className,
+  fit = 'cover',
+  size,
+}: {
+  scene: SceneId;
+  sky: SkyState;
+  className?: string;
+  fit?: 'cover' | 'page';
+  /** Box size in CSS px when the caller knows it (e.g. a window in another document); otherwise measured. */
+  size?: [number, number];
+}) {
   const id = useId().replace(/:/g, '');
-  const [ref, [w, h]] = useBoxSize([1200, 140]);
+  const [ref, measured] = useBoxSize([1200, 140]);
+  const [w, h] = size ?? measured;
   const def = SCENES[scene];
   const { palette: pal } = sky;
 
