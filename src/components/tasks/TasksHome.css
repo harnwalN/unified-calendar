@@ -213,3 +213,23 @@
   .th-progress-bar { flex: 1; width: auto; min-width: 60px; }
   .th-progress { flex: 1; }
 }
+
+/* ---- compact header over the full-page scene ---- */
+.home-banner.home-banner--compact { min-height: 0; border-radius: 0; background: transparent; overflow: visible; }
+.home-banner--compact .scenery__scrim { display: none; }
+.home-banner--compact .scenery__content { padding: 4px 4px 0; }
+.home-clock { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; }
+.home-clock-time {
+  font-family: var(--font);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 48px;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+.home-clock-ampm { margin-left: 6px; font-size: 18px; font-weight: 500; }
+.home-clock-date { font-family: var(--font); font-size: 18px; font-weight: 500; color: var(--text-2); }
+@media (max-width: 599px) {
+  .home-clock-time { font-size: 30px; line-height: 36px; }
+  .home-clock-date { font-size: 15px; }
+}
