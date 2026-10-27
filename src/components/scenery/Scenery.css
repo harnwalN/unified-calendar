@@ -127,28 +127,12 @@
 
 /* ---- Whole-page background (settings.sceneMode = 'page') ---- */
 .scene-backdrop {
-  --scene-h: clamp(300px, 48vh, 420px);
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
   background: var(--bg);
-}
-/* The same scene, heavily blurred, tints everything below the landscape. */
-.scene-backdrop__wash { position: absolute; inset: -8%; filter: blur(48px) saturate(1.2); }
-.scene-backdrop__wash::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--bg) 42%, transparent);
-}
-.scene-backdrop__art {
-  position: absolute;
-  inset: 0 0 auto;
-  height: var(--scene-h);
-  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
-  mask-image: linear-gradient(to bottom, #000 72%, transparent);
 }
 .scene-backdrop .sc-art { z-index: 0; }
 

@@ -51,8 +51,6 @@ export interface AppState extends SyncedData {
   calendars: Record<string, CalendarInfo>;
   runningTimer: RunningTimer | null;
   view: ViewMode;
-  /** Full day/week/month/agenda calendar expanded below the week strip. */
-  calendarOpen: boolean;
   onboarded: boolean;
 
   // ---- runtime only (events are cached in IndexedDB by lib/db.ts) ----
@@ -70,7 +68,6 @@ export interface AppState extends SyncedData {
 
   // ---- UI actions ----
   setView: (view: ViewMode) => void;
-  setCalendarOpen: (open: boolean) => void;
   setCursor: (date: Date) => void;
   setSearch: (q: string) => void;
   selectEvent: (id: string | null) => void;
@@ -175,8 +172,7 @@ export const useStore = create<AppState>()(
       timeEntries: {},
       imports: {},
       runningTimer: null,
-      view: 'week',
-      calendarOpen: false,
+      view: 'day',
       onboarded: false,
 
       eventsBySource: {},
@@ -190,7 +186,6 @@ export const useStore = create<AppState>()(
       sidebarOpen: true,
 
       setView: (view) => set({ view }),
-      setCalendarOpen: (calendarOpen) => set({ calendarOpen }),
       setCursor: (date) => set({ cursor: date.toISOString() }),
       setSearch: (search) => set({ search }),
       selectEvent: (selectedEventId) => set({ selectedEventId }),
@@ -359,7 +354,6 @@ export const useStore = create<AppState>()(
         imports: s.imports,
         runningTimer: s.runningTimer,
         view: s.view,
-        calendarOpen: s.calendarOpen,
         onboarded: s.onboarded,
       }),
       migrate: (persisted, version) => migrateState(persisted as Record<string, unknown>, version),
@@ -381,7 +375,7 @@ export function migrateState(state: Record<string, unknown>, version: number): R
       meta[uid] = { uid, ...defaultTaskFields(), status: 'done', updatedAt: at };
     }
     const { done: _done, ...rest } = state;
-    return { ...rest, meta, classes: {}, tasks: {}, timeEntries: {}, imports: {}, runningTimer: null, calendarOpen: false };
+    return { ...rest, meta, classes: {}, tasks: {}, timeEntries: {}, imports: {}, runningTimer: null };
   }
   return state;
 }

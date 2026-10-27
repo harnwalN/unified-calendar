@@ -11,14 +11,12 @@ import { formatEstimate, greeting } from './format';
 import { useCollapsedSections, useHomeSections } from './useHomeData';
 import TaskRow from './TaskRow';
 import QuickAdd from './QuickAdd';
-import CalendarPanel from './CalendarPanel';
 import Planner from './Planner';
 import './TasksHome.css';
 
 export default function TasksHome() {
   const { sections, now } = useHomeSections();
   const tasks = useTasks();
-  const calendarOpen = useStore((s) => s.calendarOpen);
   const hasSources = useStore((s) => Object.keys(s.calendars).length > 0 || s.feeds.length > 0 || s.accounts.length > 0);
   const [collapsed, toggle] = useCollapsedSections();
   const { today, classes, personal, quick, openCount, dueTodayCount, overdueCount } = sections;
@@ -47,7 +45,6 @@ export default function TasksHome() {
         </SceneryBanner>
 
         <Planner />
-        {calendarOpen && <CalendarPanel />}
 
         <QuickAdd />
 

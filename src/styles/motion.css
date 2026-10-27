@@ -1,0 +1,114 @@
+/* Motion. Principles (Emil Kowalski's "Animations on the Web", via the animate skill):
+   animate only transform/opacity, ease-out for things entering, 200–300 ms, exits faster than
+   enters, and nothing moves when the user prefers reduced motion. */
+:root {
+  --ease-out-quint: cubic-bezier(.23, 1, .32, 1);
+  --ease-out-cubic: cubic-bezier(.33, 1, .68, 1);
+  --ease-in-out-cubic: cubic-bezier(.645, .045, .355, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --dur-fast: 150ms;
+  --dur: 260ms;
+}
+
+/* Shared keyframes (pop-in / fade-in are used by popovers across the app). */
+@keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes slide-from-right { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes slide-from-left { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+@keyframes zoom-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes grow-x { from { opacity: 0; transform: scaleX(.2); } to { opacity: 1; transform: none; } }
+@keyframes drop-in { from { opacity: 0; transform: translateY(-8px) scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes ripple { from { opacity: .55; transform: scale(1); } to { opacity: 0; transform: scale(3.2); } }
+@keyframes check-pop { 0% { transform: scale(.5); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes nudge { 0%, 100% { transform: none; } 30% { transform: scale(1.07); } 60% { transform: scale(.98); } }
+
+/* Press feedback on every button (fill-mode backwards elsewhere keeps this from being overridden). */
+button { transition: transform 100ms var(--ease-out-cubic); }
+button:active:not(:disabled) { transform: scale(.97); }
+
+/* ---- home ---- */
+.home-greeting h1 { animation: rise 500ms var(--ease-out-quint) backwards; }
+.home-greeting p { animation: rise 500ms var(--ease-out-quint) 90ms backwards; }
+.planner { animation: rise 420ms var(--ease-out-quint) 120ms backwards; }
+.quick-add { animation: rise 420ms var(--ease-out-quint) 180ms backwards; }
+.th-columns { animation: rise 420ms var(--ease-out-quint) 240ms backwards; }
+
+/* Task rows stagger in when a list first appears. */
+.task-list > * { animation: rise var(--dur) var(--ease-out-quint) backwards; }
+.task-list > :nth-child(2) { animation-delay: 30ms; }
+.task-list > :nth-child(3) { animation-delay: 60ms; }
+.task-list > :nth-child(4) { animation-delay: 90ms; }
+.task-list > :nth-child(5) { animation-delay: 120ms; }
+.task-list > :nth-child(6) { animation-delay: 150ms; }
+.task-list > :nth-child(n + 7) { animation-delay: 180ms; }
+.th-section-body { animation: rise 220ms var(--ease-out-quint); }
+.th-chevron { transition: transform var(--dur) var(--ease-out-quint); }
+.status-check.done .material-symbols-outlined, .status-check.doing::before { animation: check-pop 360ms var(--ease-spring); }
+.task-row { transition: background-color var(--dur-fast) ease, opacity var(--dur) ease; }
+
+/* ---- planner ---- */
+.pl-body.pl-next { animation: slide-from-right var(--dur) var(--ease-out-quint); }
+.pl-body.pl-prev { animation: slide-from-left var(--dur) var(--ease-out-quint); }
+.pl-body.pl-zoom { animation: zoom-in var(--dur) var(--ease-out-quint); }
+
+/* Day/Week/Month: one pill slides between the options. */
+.pl-modes::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / 3);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .15);
+  transform: translateX(calc(var(--idx, 0) * 100%));
+  transition: transform 320ms var(--ease-out-quint);
+}
+.pl-modes button { transition: color var(--dur-fast) ease, transform 100ms var(--ease-out-cubic); }
+
+/* Events grow out from their start time, deadlines drop in, staggered. */
+.tb-event { transform-origin: left center; animation: grow-x 420ms var(--ease-out-quint) backwards; animation-delay: calc(min(var(--i, 0), 12) * 35ms); }
+.tb-due { animation: drop-in 380ms var(--ease-spring) 200ms backwards; transition: transform var(--dur-fast) var(--ease-out-cubic); }
+.tb-tracked span { animation: grow-x 500ms var(--ease-out-quint) 150ms backwards; transform-origin: left center; }
+.tb-past { transition: width 1s linear; }
+.tb-nowline { transition: left 1s linear; }
+/* The "now" dot sends out a slow ripple. */
+.tb-nowline::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: ripple 2.4s var(--ease-out-cubic) infinite;
+}
+.pl-week-row { animation: rise 320ms var(--ease-out-quint) backwards; animation-delay: calc(var(--row, 0) * 35ms); }
+.pl-month-day { animation: zoom-in 300ms var(--ease-out-quint) backwards; animation-delay: calc(min(var(--cell, 0), 41) * 6ms); }
+.pl-chip, .pl-month-day, .pl-week-day { transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform 100ms var(--ease-out-cubic); }
+.pl-chip.selected { animation: zoom-in 220ms var(--ease-out-quint); }
+/* Away from today, the Today button nudges once to say "you can come back". */
+.pl-today { transition: background-color var(--dur) var(--ease-out-quint), color var(--dur) var(--ease-out-quint), border-color var(--dur) ease, transform 100ms var(--ease-out-cubic); }
+.pl-today.away { animation: nudge 420ms var(--ease-out-quint); }
+
+/* ---- top bar ---- */
+.timer-pill { animation: pop-in var(--dur) var(--ease-spring); }
+.start-timer-btn { animation: fade-in var(--dur) ease; }
+.topbar-mini.active .material-symbols-outlined { animation: check-pop 360ms var(--ease-spring); }
+
+/* ---- scenery ---- */
+/* Clouds drift across the sky; the scene crossfades when you pick another one. */
+@keyframes sc-drift { from { transform: translateX(0); } to { transform: translateX(var(--drift)); } }
+.sc-cloud { animation: sc-drift linear infinite; }
+.scene-backdrop__layer { position: absolute; inset: 0; animation: fade-in 700ms ease; }
+.sc-thumb__art { transition: box-shadow var(--dur-fast) ease, transform var(--dur) var(--ease-out-quint); }
+.sc-thumb:hover .sc-thumb__art { transform: translateY(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-cloud, .tb-nowline::after, .tb-tracked .running { animation: none !important; }
+  button:active:not(:disabled) { transform: none; }
+}

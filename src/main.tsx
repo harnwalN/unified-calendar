@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 // Global styles first so component stylesheets (imported by App) win ties in the cascade.
 import './styles/tokens.css';
 import './styles/app.css';
+import './styles/motion.css';
 import App from './App';
 
 // Dev-only mock data (`?mock`); the dynamic import is dropped from production builds.

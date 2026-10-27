@@ -8,7 +8,7 @@ import { sunTimes } from '../../lib/sun';
 import type { CalEvent } from '../../types';
 import Icon from '../Icon';
 import { useSunLocation } from '../scenery/sky';
-import { assignLanes, pct } from './timeline';
+import { assignLanes, inkFor, pct } from './timeline';
 import type { DayData } from './usePlannerData';
 
 const HOUR = 3_600_000;
@@ -57,7 +57,7 @@ export default function DayTrack({
       ))}
       {past > 0 && <span className="tb-past" style={{ width: `${past}%` }} />}
 
-      {lanes.map(({ span: s, lane }) => (
+      {lanes.map(({ span: s, lane }, i) => (
         <button
           key={s.id}
           className={`tb-event${s.planned ? ' planned' : ''}${s.end <= now ? ' past' : ''}`}
@@ -67,6 +67,8 @@ export default function DayTrack({
               width: `max(6px, ${at(s.end) - at(s.start)}%)`,
               top: `calc(${lane} * var(--lane-h) + var(--track-pad))`,
               '--ev-color': s.color,
+              '--ev-ink': inkFor(s.color),
+              '--i': i,
             } as CSSProperties
           }
           onClick={() => openPlannerEvent(s.event)}
