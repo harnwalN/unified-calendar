@@ -30,6 +30,8 @@ button:active:not(:disabled) { transform: scale(.97); }
 /* ---- home ---- */
 .home-greeting h1 { animation: rise 500ms var(--ease-out-quint) backwards; }
 .home-greeting p { animation: rise 500ms var(--ease-out-quint) 90ms backwards; }
+.home-clock-time { animation: rise 500ms var(--ease-out-quint) backwards; }
+.home-clock-date { animation: rise 500ms var(--ease-out-quint) 80ms backwards; }
 .planner { animation: rise 420ms var(--ease-out-quint) 120ms backwards; }
 .quick-add { animation: rise 420ms var(--ease-out-quint) 180ms backwards; }
 .th-columns { animation: rise 420ms var(--ease-out-quint) 240ms backwards; }

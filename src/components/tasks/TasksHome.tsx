@@ -6,6 +6,8 @@ import { useVisibleEvents } from '../../store/selectors';
 import type { TaskView } from '../../types';
 import Icon from '../Icon';
 import SceneryBanner from '../scenery/SceneryBanner';
+import { usePageScene } from '../scenery/SceneBackdrop';
+import { useNow } from '../hooks';
 import { fitsGap, freeMinutes, type ClassSection, type TaskGroup } from './grouping';
 import { formatEstimate, greeting } from './format';
 import { useCollapsedSections, useHomeSections } from './useHomeData';
@@ -20,6 +22,7 @@ export default function TasksHome() {
   const hasSources = useStore((s) => Object.keys(s.calendars).length > 0 || s.feeds.length > 0 || s.accounts.length > 0);
   const [collapsed, toggle] = useCollapsedSections();
   const { today, classes, personal, quick, openCount, dueTodayCount, overdueCount } = sections;
+  const pageScene = usePageScene();
 
   const summary = [
     dueTodayCount ? `${dueTodayCount} due today` : 'Nothing due today',
@@ -31,18 +34,25 @@ export default function TasksHome() {
   return (
     <div className="tasks-home">
       <div className="th-inner">
-        <SceneryBanner className="home-banner">
-          <div className="home-greeting">
-            <h1>
-              {greeting(now)}
-              <span className="home-date">
-                <span className="home-sep"> · </span>
-                {format(now, 'EEE, MMM d')}
-              </span>
-            </h1>
-            <p>{tasks.length ? summary : 'Welcome! Add a task or connect your calendars to get started.'}</p>
-          </div>
-        </SceneryBanner>
+        {pageScene ? (
+          // Over the full-page scene: just the date and time, so the landscape stays the hero.
+          <SceneryBanner className="home-banner home-banner--compact">
+            <HeroClock />
+          </SceneryBanner>
+        ) : (
+          <SceneryBanner className="home-banner">
+            <div className="home-greeting">
+              <h1>
+                {greeting(now)}
+                <span className="home-date">
+                  <span className="home-sep"> · </span>
+                  {format(now, 'EEE, MMM d')}
+                </span>
+              </h1>
+              <p>{tasks.length ? summary : 'Welcome! Add a task or connect your calendars to get started.'}</p>
+            </div>
+          </SceneryBanner>
+        )}
 
         <Planner />
 
@@ -111,6 +121,19 @@ export default function TasksHome() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function HeroClock() {
+  const now = useNow(10_000);
+  return (
+    <div className="home-clock">
+      <time className="home-clock-time" dateTime={now.toISOString()}>
+        {format(now, 'h:mm')}
+        <span className="home-clock-ampm">{format(now, 'a')}</span>
+      </time>
+      <span className="home-clock-date">{format(now, 'EEEE, MMMM d')}</span>
     </div>
   );
 }
