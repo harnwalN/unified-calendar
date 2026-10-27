@@ -6,7 +6,7 @@ import { useTasks } from '../../store/tasks';
 import { PLANNED_CALENDAR_ID, useVisibleEvents } from '../../store/selectors';
 import { useTaskLabeler } from '../../features/timer';
 import type { CalEvent, TaskRef, TaskView } from '../../types';
-import type { Span } from './timeline';
+import { eventColors, type Span } from './timeline';
 
 export interface EventSpan extends Span {
   event: CalEvent;
@@ -57,9 +57,12 @@ export function usePlannerData(now: number): (date: Date | number) => DayData {
         end: Math.max(Date.parse(e.end), Date.parse(e.start) + 60_000),
         event: e,
         planned,
-        color: calendars[e.calendarId]?.color ?? (planned ? '#0b8043' : '#1a73e8'),
+        color: calendars[e.calendarId]?.color ?? '#0b8043',
       });
     }
+    // Scheduled work keeps its green; everything else gets a varied per-event color.
+    const colors = eventColors(timed.filter((t) => !t.planned).map((t) => ({ id: t.id, title: t.event.title, start: t.start, end: t.end })));
+    for (const t of timed) t.color = colors.get(t.id) ?? t.color;
     const due = tasks.filter((t): t is DueTask => t.status !== 'done' && !!t.due);
     const tracked: TrackedSpan[] = Object.values(entries)
       .filter((e) => !e.deleted)

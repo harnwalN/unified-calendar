@@ -12,8 +12,8 @@ export function usePageScene(): boolean {
 }
 
 /**
- * Whole-window background: a crisp landscape across the top of the page that fades into a
- * soft, blurred wash of the same scene behind everything else. Fixed, so content scrolls over it.
+ * Whole-window background: the full scene, sky above and landscape below, fixed behind the app so
+ * content scrolls over it (Gmail-style). The sun crosses the whole window through the day.
  */
 export default function SceneBackdrop() {
   const scene = useSceneId();
@@ -23,11 +23,8 @@ export default function SceneBackdrop() {
   if (scene === 'off') return null;
   return (
     <div className={`scene-backdrop ${sky.palette.lightSky ? 'scenery--light-sky' : 'scenery--dark-sky'}`} aria-hidden="true">
-      <div className="scene-backdrop__wash">
-        <SceneArt scene={scene} sky={sky} />
-      </div>
-      <div className="scene-backdrop__art">
-        <SceneArt scene={scene} sky={sky} />
+      <div key={scene} className="scene-backdrop__layer">
+        <SceneArt scene={scene} sky={sky} fit="page" />
       </div>
     </div>
   );

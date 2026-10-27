@@ -28,13 +28,13 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-family: var(--font); font-size: 16px; font-weight: 500; color: var(--text);
 }
-.pl-modes { display: inline-flex; padding: 2px; border-radius: 18px; background: var(--surface-3); }
+.pl-modes { position: relative; display: inline-grid; grid-template-columns: repeat(3, minmax(0, 1fr)); isolation: isolate; padding: 2px; border-radius: 18px; background: var(--surface-3); }
 .pl-modes button {
   height: 28px; padding: 0 12px; border: 0; border-radius: 14px;
   background: transparent; color: var(--text-2);
   font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer;
 }
-.pl-modes button[aria-checked='true'] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .15); }
+.pl-modes button[aria-checked='true'] { color: var(--text); }
 .pl-full.active { background: var(--primary-container); color: var(--on-primary-container); }
 
 .pl-day { display: flex; flex-direction: column; gap: 6px; }
@@ -126,7 +126,7 @@
   border: 0;
   border-radius: 6px;
   background: var(--ev-color);
-  color: #fff;
+  color: var(--ev-ink, #fff);
   font-size: 12px;
   font-weight: 500;
   line-height: calc(var(--lane-h) - 4px);

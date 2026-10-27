@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { stepCursor } from '../lib/time';
 import type { ViewMode } from '../types';
 
-const VIEW_KEYS: Record<string, ViewMode> = { d: 'day', w: 'week', m: 'month', a: 'agenda' };
+const VIEW_KEYS: Record<string, ViewMode> = { d: 'day', w: 'week', m: 'month' };
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -28,8 +28,7 @@ export function useShortcuts(focusSearch: () => void, narrowDays: number | undef
 
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       const cursor = new Date(s.cursor);
-      if (key === 'c') s.setCalendarOpen(!s.calendarOpen);
-      else if (key === 'n') document.getElementById('quick-add-input')?.focus();
+      if (key === 'n') document.getElementById('quick-add-input')?.focus();
       else if (VIEW_KEYS[key]) s.setView(VIEW_KEYS[key]);
       else if (key === 't') s.setCursor(new Date());
       else if (key === 'j' || key === 'ArrowRight') s.setCursor(stepCursor(s.view, cursor, 1, narrowDays));

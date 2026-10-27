@@ -1,7 +1,7 @@
 // The home planner: a timeline of the selected day, or a week of timelines, or a month grid,
-// with date navigation and a one-click way back to today. The full calendar expands below it.
-import { useMemo, type CSSProperties, type ReactNode } from 'react';
-import { format, isSameDay, isSameMonth, startOfDay } from 'date-fns';
+// with date navigation and a one-click way back to today.
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { format, isSameDay, isSameMonth, startOfDay, startOfWeek } from 'date-fns';
 import { useStore } from '../../store';
 import { monthGridDays, stepCursor, viewTitle, visibleDays, weekdayLabels } from '../../lib/time';
 import type { ViewMode } from '../../types';
@@ -26,7 +26,6 @@ export default function Planner() {
   const view = useStore((s) => s.view);
   const cursorIso = useStore((s) => s.cursor);
   const weekStartsOn = useStore((s) => s.settings.weekStartsOn);
-  const calendarOpen = useStore((s) => s.calendarOpen);
   const dayData = usePlannerData(now);
   const mode: Mode = view === 'week' || view === 'month' ? view : 'day';
   const cursor = new Date(cursorIso);
@@ -53,6 +52,16 @@ export default function Planner() {
         : viewTitle(mode, cursor, weekStartsOn);
   const unit = mode;
 
+  // Direction-aware transition: slide when paging, zoom when switching Day/Week/Month.
+  const periodKey =
+    mode === 'month' ? format(cursor, 'yyyy-MM') : format(mode === 'week' ? startOfWeek(cursor, { weekStartsOn }) : cursor, 'yyyy-MM-dd');
+  const last = useRef({ mode, periodKey, t: cursor.getTime() });
+  const motion =
+    last.current.mode !== mode ? 'pl-zoom' : last.current.periodKey !== periodKey ? (cursor.getTime() > last.current.t ? 'pl-next' : 'pl-prev') : '';
+  useEffect(() => {
+    last.current = { mode, periodKey, t: cursor.getTime() };
+  });
+
   return (
     <section className="planner" aria-label="Planner">
       <header className="pl-head">
@@ -76,7 +85,12 @@ export default function Planner() {
             {title}
           </h2>
         </div>
-        <div className="pl-modes" role="radiogroup" aria-label="Planner range">
+        <div
+          className="pl-modes"
+          role="radiogroup"
+          aria-label="Planner range"
+          style={{ '--idx': MODES.findIndex((m) => m.id === mode) } as CSSProperties}
+        >
           {MODES.map((m) => (
             <button
               key={m.id}
@@ -89,22 +103,14 @@ export default function Planner() {
             </button>
           ))}
         </div>
-        <button
-          className={`icon-btn small pl-full${calendarOpen ? ' active' : ''}`}
-          onClick={() => useStore.getState().setCalendarOpen(!calendarOpen)}
-          aria-expanded={calendarOpen}
-          aria-controls="calendar-panel"
-          aria-label={calendarOpen ? 'Hide full calendar' : 'Show full calendar'}
-          title={`${calendarOpen ? 'Hide' : 'Show'} full calendar (C)`}
-        >
-          <Icon name={calendarOpen ? 'close_fullscreen' : 'calendar_month'} />
-        </button>
       </header>
 
-      {mode === 'day' && <DayMode data={dayData(cursor)} now={now} />}
+      <div key={`${mode}:${periodKey}`} className={`pl-body ${motion}`}>
+        {mode === 'day' && <DayMode data={dayData(cursor)} now={now} />}
+        {mode === 'week' && <WeekMode cursor={cursor} now={now} weekStartsOn={weekStartsOn} dayData={dayData} onPick={pickDay} />}
+        {mode === 'month' && <MonthMode cursor={cursor} now={nowDate} weekStartsOn={weekStartsOn} dayData={dayData} onPick={pickDay} />}
+      </div>
       {mode === 'day' && <WeekChips cursor={cursor} now={nowDate} weekStartsOn={weekStartsOn} dayData={dayData} onPick={pickDay} />}
-      {mode === 'week' && <WeekMode cursor={cursor} now={now} weekStartsOn={weekStartsOn} dayData={dayData} onPick={pickDay} />}
-      {mode === 'month' && <MonthMode cursor={cursor} now={nowDate} weekStartsOn={weekStartsOn} dayData={dayData} onPick={pickDay} />}
     </section>
   );
 }
@@ -243,11 +249,11 @@ function WeekMode({ cursor, now, weekStartsOn, dayData, onPick }: RangeProps & {
         <HourAxis day={today} range={range} />
         <span />
       </div>
-      {rows.map((data) => {
+      {rows.map((data, i) => {
         const d = new Date(data.day);
         const isToday = data.day === today;
         return (
-          <div key={data.day} className={`pl-week-row${isToday ? ' today' : ''}`}>
+          <div key={data.day} className={`pl-week-row${isToday ? ' today' : ''}`} style={{ '--row': i } as CSSProperties}>
             <button className="pl-week-day" onClick={() => onPick(d)} title={`Open ${format(d, 'EEEE')}`}>
               <span className="pl-chip-wd">{format(d, 'EEE')}</span>
               <span className="pl-week-num">{format(d, 'd')}</span>
@@ -271,7 +277,7 @@ function MonthMode({ cursor, now, weekStartsOn, dayData, onPick }: RangeProps & 
           {l}
         </span>
       ))}
-      {days.map((d) => {
+      {days.map((d, i) => {
         const data = dayData(d);
         const out = !isSameMonth(d, cursor);
         const today = isSameDay(d, now);
@@ -282,6 +288,7 @@ function MonthMode({ cursor, now, weekStartsOn, dayData, onPick }: RangeProps & 
             onClick={() => onPick(d)}
             aria-label={`${format(d, 'EEEE, MMMM d')}: ${data.spans.length} events, ${data.due.length} due`}
             aria-current={today ? 'date' : undefined}
+            style={{ '--cell': i } as CSSProperties}
           >
             <span className="pl-month-num">{format(d, 'd')}</span>
             <Marks data={data} />

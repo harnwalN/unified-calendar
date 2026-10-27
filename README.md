@@ -8,7 +8,7 @@ A free, Google-Calendar-style web app that puts **all your calendars in one plac
 - 📝 **PrairieLearn** deadlines (via a bookmarklet)
 - ☁️ Optional **sync across devices** through a hidden app folder in your own Google Drive
 
-Features: day / week / month / agenda views, search, per-calendar colors and visibility, a **“Due soon” checklist** for
+Features: a day / week / month planner of timelines, search, per-calendar colors and visibility, a **“Due soon” checklist** for
 assignments (check them off as you finish), **deadline reminders** as notifications, light/dark theme, works on phones
 and installs as an app (PWA).
 
@@ -16,7 +16,7 @@ Tasks first: a **Today** list, one section per class, personal to-dos and quick 
 (events, scheduled work, deadlines and tracked time on one line); **schedule work sessions** on any task across several
 days; a one-click **stopwatch** with day/week stats; a **floating mini window** (🗗 in the top bar) that shows your
 timer and today's tasks on top of other tabs; and a **Gmail-style background** (⛰ in the top bar): eight landscapes
-whose sun, shadows and sky follow the real time of day, across the whole page or just the header. Everything is stored in your browser — there is no app database.
+whose sun, shadows, drifting clouds and sky follow the real time of day, across the whole page or just the header. Everything is stored in your browser — there is no app database.
 
 **Live site:** https://harnwaln.github.io/unified-calendar/
 

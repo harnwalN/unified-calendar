@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { useCallback, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { format } from 'date-fns';
 import { sourceKeyFor, useStore } from '../store';
-import type { GoogleAccount, IcsFeed, ViewMode } from '../types';
+import type { GoogleAccount, IcsFeed } from '../types';
 import Icon from './Icon';
 import TimerPill from './time/TimerPill';
 import StartTimerMenu from './time/StartTimerMenu';
@@ -12,17 +12,10 @@ import { useNarrowDays, useNow } from './hooks';
 import { useShortcuts } from './useShortcuts';
 import './TopBar.css';
 
-const VIEWS: { id: ViewMode; label: string; key: string }[] = [
-  { id: 'day', label: 'Day', key: 'D' },
-  { id: 'week', label: 'Week', key: 'W' },
-  { id: 'month', label: 'Month', key: 'M' },
-  { id: 'agenda', label: 'Agenda', key: 'A' },
-];
 
 export default function TopBar() {
   const sidebarOpen = useStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
-  const calendarOpen = useStore((s) => s.calendarOpen);
   const timing = useStore((s) => s.runningTimer !== null);
   const narrowDays = useNarrowDays();
 
@@ -36,7 +29,7 @@ export default function TopBar() {
   useShortcuts(focusSearch, narrowDays);
 
   return (
-    <header className={`topbar${timing ? ' timing' : ''}${calendarOpen ? ' calendar' : ''}`}>
+    <header className={`topbar${timing ? ' timing' : ''}`}>
       <div className="topbar-start">
         <button
           className="icon-btn"
@@ -60,7 +53,6 @@ export default function TopBar() {
         <SearchBox inputRef={searchRef} expanded={searchExpanded} setExpanded={setSearchExpanded} />
         <Clock />
         <SyncIndicator />
-        {calendarOpen && <ViewMenu />}
         <MiniWindowButton />
         <button
           className="icon-btn topbar-time"
@@ -127,8 +119,6 @@ function SearchBox({
               setSearch('');
               setExpanded(false);
               e.currentTarget.blur();
-            } else if (e.key === 'Enter' && search.trim()) {
-              useStore.getState().setView('agenda');
             }
           }}
         />
@@ -234,63 +224,6 @@ function SyncIndicator() {
     );
   }
   return null;
-}
-
-function ViewMenu() {
-  const view = useStore((s) => s.view);
-  const setView = useStore((s) => s.setView);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: Event) => {
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', close);
-    document.addEventListener('keydown', close);
-    return () => {
-      document.removeEventListener('pointerdown', close);
-      document.removeEventListener('keydown', close);
-    };
-  }, [open]);
-
-  const current = VIEWS.find((v) => v.id === view) ?? VIEWS[1];
-  return (
-    <div className="view-menu" ref={ref}>
-      <button
-        className="outline-btn view-menu-btn"
-        onClick={() => setOpen(!open)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={`View: ${current.label}`}
-      >
-        <span className="view-menu-label">{current.label}</span>
-        <Icon name="calendar_view_month" className="view-menu-icon" />
-        <Icon name="arrow_drop_down" />
-      </button>
-      {open && (
-        <ul className="menu" role="menu">
-          {VIEWS.map((v) => (
-            <li key={v.id} role="none">
-              <button
-                role="menuitemradio"
-                aria-checked={v.id === view}
-                className={v.id === view ? 'active' : undefined}
-                onClick={() => {
-                  setView(v.id);
-                  setOpen(false);
-                }}
-              >
-                <span>{v.label}</span>
-                <kbd>{v.key}</kbd>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
 }
 
 function Accounts() {

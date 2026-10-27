@@ -1,5 +1,6 @@
 import { memo, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { SceneId } from '../../types';
+import { mixHex } from '../../lib/sun';
 import { makePaint, rng, VIEW_H, VIEW_W } from './paint';
 import { SCENES } from './scenes';
 import type { SkyState } from './sky';
@@ -10,6 +11,26 @@ const STARS = (() => {
   const r = rng(42);
   return Array.from({ length: 70 }, (_, i) => ({ x: r() * VIEW_W, y: r() * 150, r: 0.5 + r() * 0.9, g: i % 3 }));
 })();
+
+/** Drifting clouds: height in the sky (0 top … 1 horizon), size, and seconds to cross. */
+const CLOUDS = [
+  { y: 0.2, k: 1, dur: 190 },
+  { y: 0.42, k: 0.7, dur: 260 },
+  { y: 0.12, k: 0.55, dur: 320 },
+  { y: 0.33, k: 0.85, dur: 230 },
+];
+
+/** A flat-bottomed geometric cloud centred on 0,0 (baseline at y=0). */
+function Cloud() {
+  return (
+    <>
+      <rect x={-44} y={-12} width={88} height={12} rx={6} />
+      <circle cx={-18} cy={-12} r={14} />
+      <circle cx={8} cy={-17} r={18} />
+      <circle cx={29} cy={-9} r={10} />
+    </>
+  );
+}
 
 /** Size of the element in CSS px, tracked with a ResizeObserver (default when unmeasured). */
 function useBoxSize(fallback: [number, number]) {
@@ -38,24 +59,29 @@ function moonPath(f: number, r: number) {
   return `${outer} ${inner} Z`;
 }
 
+/** Vertical extent of the landscape layers in canvas units (tallest peaks start near y=60). */
+const LAND_H = 140;
+
 /**
  * The full illustration: sky, stars, sun or moon on its arc, and a landscape whose colors and
- * shadows follow the sun. Fills its box (xMidYMax slice), so it works at any aspect ratio.
+ * shadows follow the sun. Fills its box anchored bottom-centre, so it works at any aspect ratio.
+ * `fit="cover"` scales the 1200×200 canvas to cover the box (banners, thumbnails); `fit="page"`
+ * keeps the landscape in the lower part of a tall box and extends the sky above it.
  */
-function SceneArt({ scene, sky, className }: { scene: SceneId; sky: SkyState; className?: string }) {
+function SceneArt({ scene, sky, className, fit = 'cover' }: { scene: SceneId; sky: SkyState; className?: string; fit?: 'cover' | 'page' }) {
   const id = useId().replace(/:/g, '');
   const [ref, [w, h]] = useBoxSize([1200, 140]);
   const def = SCENES[scene];
   const { palette: pal } = sky;
 
   // Visible part of the 1200×200 canvas for this box.
-  const s = Math.max(w / VIEW_W, h / VIEW_H);
+  const s = fit === 'page' ? Math.max(w / VIEW_W, (h * 0.56) / LAND_H) : Math.max(w / VIEW_W, h / VIEW_H);
   const vw = w / s;
   const vh = h / s;
   const x0 = (VIEW_W - vw) / 2;
   const y0 = VIEW_H - vh;
 
-  const sunR = clamp(15 / s, 9, 30);
+  const sunR = clamp((fit === 'page' ? 24 : 15) / s, 9, 30);
   const peakY = y0 + Math.max(sunR + 6, vh * 0.2);
   const arcX = (f: number) => x0 + vw * (0.07 + 0.86 * clamp(f, -0.06, 1.06));
   const arcY = (lift: number) => def.horizon - (def.horizon - peakY) * lift;
@@ -67,12 +93,13 @@ function SceneArt({ scene, sky, className }: { scene: SceneId; sky: SkyState; cl
   const moonY = arcY(Math.sin(Math.PI * (sky.moonFrac ?? 0)) * 0.85);
   const p = makePaint(sky, pal.starOpacity > 0.5 && moon ? moonX : sunX);
   const Draw = def.Draw;
+  const cloudColor = mixHex(mixHex('#ffffff', pal.glow, pal.warm * 0.45), '#4a5482', (1 - pal.ambient) * 0.75);
 
   return (
     <svg
       ref={ref}
       className={`sc-art${className ? ` ${className}` : ''}`}
-      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+      viewBox={`${x0.toFixed(1)} ${y0.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`}
       preserveAspectRatio="xMidYMax slice"
       aria-hidden="true"
       focusable="false"
@@ -96,7 +123,7 @@ function SceneArt({ scene, sky, className }: { scene: SceneId; sky: SkyState; cl
           <stop offset="1" stopColor={pal.sun} stopOpacity="0" />
         </radialGradient>
       </defs>
-      <rect x={-40} y={-200} width={VIEW_W + 80} height={VIEW_H + 200} fill={`url(#${id}-sky)`} />
+      <rect x={-40} y={Math.min(-200, y0 - 20)} width={VIEW_W + 80} height={VIEW_H - Math.min(-200, y0 - 20)} fill={`url(#${id}-sky)`} />
 
       {pal.starOpacity > 0 && (
         <g className="sc-stars" fill="#ffffff" style={{ opacity: pal.starOpacity }}>
@@ -131,6 +158,28 @@ function SceneArt({ scene, sky, className }: { scene: SceneId; sky: SkyState; cl
           <path d={moonPath(sky.moonPhase, sunR * 0.8)} fill="#f3f1e4" />
         </g>
       )}
+
+      <g className="sc-clouds" fill={cloudColor} style={{ opacity: 0.5 + pal.ambient * 0.35 }}>
+        {CLOUDS.map((c, i) => {
+          const k = c.k * clamp(1.4 / s, 0.35, 1.2);
+          return (
+            <g key={i} transform={`translate(${(x0 - 60 * k).toFixed(1)} ${(y0 + (def.horizon - y0) * c.y).toFixed(1)})`}>
+              <g
+                className="sc-cloud"
+                style={{
+                  ['--drift' as string]: `${(vw + 120 * k).toFixed(0)}px`,
+                  animationDuration: `${c.dur}s`,
+                  animationDelay: `${(-c.dur * (i + 0.5)) / CLOUDS.length}s`,
+                }}
+              >
+                <g transform={`scale(${k.toFixed(3)})`}>
+                  <Cloud />
+                </g>
+              </g>
+            </g>
+          );
+        })}
+      </g>
 
       <Draw p={p} id={id} />
     </svg>
