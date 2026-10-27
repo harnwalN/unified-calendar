@@ -60,7 +60,7 @@ export default function DayTrack({
       {lanes.map(({ span: s, lane }, i) => (
         <button
           key={s.id}
-          className={`tb-event${s.planned ? ' planned' : ''}${s.end <= now ? ' past' : ''}`}
+          className={`tb-event${s.planned ? ' planned' : ''}${s.className ? ' class' : ''}${s.end <= now ? ' past' : ''}`}
           style={
             {
               left: `${at(s.start)}%`,
@@ -72,8 +72,9 @@ export default function DayTrack({
             } as CSSProperties
           }
           onClick={() => openPlannerEvent(s.event)}
-          title={`${s.event.title} · ${format(s.start, 'h:mm')}–${format(s.end, 'h:mm a')}${s.planned ? ' (scheduled work)' : ''}`}
+          title={`${s.event.title} · ${format(s.start, 'h:mm')}–${format(s.end, 'h:mm a')}${s.planned ? ' (scheduled work)' : s.className ? ` (${s.className} class)` : ''}`}
         >
+          {s.className && <Icon name="school" size={compact ? 11 : 13} className="tb-event-icon" />}
           <span>{s.event.title}</span>
         </button>
       ))}

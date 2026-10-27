@@ -6,6 +6,7 @@ import Icon from '../Icon';
 import TodayTab from './TodayTab';
 import WeekTab from './WeekTab';
 import EstimatesTab from './EstimatesTab';
+import ClassQuestions from './ClassQuestions';
 import './TimePage.css';
 
 type Tab = 'today' | 'week' | 'estimates';
@@ -15,12 +16,31 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'estimates', label: 'Estimates' },
 ];
 
+const INCLUDE_CLASSES_KEY = 'time:includeClasses';
+
+function readIncludeClasses(): boolean {
+  try {
+    return localStorage.getItem(INCLUDE_CLASSES_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
 export default function TimePage() {
   const open = useStore((s) => s.timePageOpen);
   const setOpen = useStore((s) => s.setTimePageOpen);
   const weekStartsOn = useStore((s) => s.settings.weekStartsOn);
   const [tab, setTab] = useState<Tab>('today');
   const [anchor, setAnchor] = useState(() => startOfDay(new Date()));
+  const [includeClasses, setIncludeClasses] = useState(readIncludeClasses);
+  const toggleClasses = (on: boolean) => {
+    setIncludeClasses(on);
+    try {
+      localStorage.setItem(INCLUDE_CLASSES_KEY, on ? '1' : '0');
+    } catch {
+      // Storage unavailable: keep it for this session.
+    }
+  };
   const closeRef = useRef<HTMLButtonElement>(null);
   const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ today: null, week: null, estimates: null });
 
@@ -112,12 +132,17 @@ export default function TimePage() {
                 {tab === 'week' ? 'This week' : 'Today'}
               </button>
             )}
+            <label className="time-class-toggle" title="Count lectures, labs and other class meetings from your calendar">
+              <input type="checkbox" checked={includeClasses} onChange={(e) => toggleClasses(e.target.checked)} />
+              Include time in class
+            </label>
           </nav>
         )}
 
         <div className="time-panel" id="time-panel" role="tabpanel" aria-labelledby={`time-tab-${tab}`}>
-          {tab === 'today' && <TodayTab day={anchor} />}
-          {tab === 'week' && <WeekTab weekStart={weekStart} />}
+          {tab !== 'estimates' && includeClasses && <ClassQuestions />}
+          {tab === 'today' && <TodayTab day={anchor} includeClasses={includeClasses} />}
+          {tab === 'week' && <WeekTab weekStart={weekStart} includeClasses={includeClasses} />}
           {tab === 'estimates' && <EstimatesTab />}
         </div>
       </div>

@@ -80,6 +80,8 @@ export interface Settings {
   scene: SceneId | 'off';
   /** 'page': the scene fills the whole window behind frosted panels (Gmail-style); 'header': only the home banner. */
   sceneMode: 'page' | 'header';
+  /** Event titles (see `eventTitleKey`) the user said are not class meetings. */
+  notClassTitles?: string[];
   /** Optional location for accurate sunrise/sunset; otherwise estimated from the time zone. */
   sunLocation?: { lat: number; lon: number };
 }
@@ -164,6 +166,8 @@ export interface ClassInfo extends Synced {
   aliases: string[];
   order: number;
   hidden?: boolean;
+  /** Event titles (see `eventTitleKey`) the user marked as this class's meetings (lectures, labs…). */
+  meetingTitles?: string[];
 }
 
 /** Identifies a task: `a:<CalEvent.uid>` for assignments, `t:<PersonalTask.id>` for personal tasks. */

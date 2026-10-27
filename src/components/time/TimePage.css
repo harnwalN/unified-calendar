@@ -250,3 +250,24 @@
 @media (prefers-reduced-motion: reduce) {
   .time-scrim, .time-page, .timeline-block.live { animation: none; }
 }
+
+/* ---- class meetings (hatched in the class color) ---- */
+.class-time { background: repeating-linear-gradient(135deg, var(--c) 0 3px, color-mix(in srgb, var(--c) 30%, transparent) 3px 6px); }
+.group-bars-bar.class-time { border-radius: 0 4px 4px 0; }
+.timeline-block.class-time { opacity: .9; }
+.chart-legend-class { color: var(--text-2); }
+
+.time-class-toggle { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 13px; color: var(--text-2); cursor: pointer; }
+.time-class-toggle input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+.class-questions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding: 14px 16px; border-radius: var(--radius-l); background: var(--primary-container); color: var(--on-primary-container); }
+.class-questions h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-family: var(--font); font-size: 15px; font-weight: 500; }
+.class-questions p { margin: 0; font-size: 13px; opacity: .85; }
+.class-questions ul { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
+.class-questions li { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 4px 4px 12px; border-radius: var(--radius-m); background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--text); }
+.class-questions li > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.class-questions li small { margin-left: 6px; color: var(--text-3); }
+.class-questions select, .class-pick select {
+  height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-m);
+  background: var(--surface); color: var(--text); font-size: 13px;
+}

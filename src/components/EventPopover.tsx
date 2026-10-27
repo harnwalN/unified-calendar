@@ -4,6 +4,8 @@ import { plannedTaskRef, useAllEvents, useCalendarColor } from '../store/selecto
 import { describeWhen } from '../lib/time';
 import type { CalEvent, SourceKind } from '../types';
 import Icon from './Icon';
+import { useClasses } from '../store/tasks';
+import { assignEventTitle, isMeetingCandidate, useClassMatcher } from '../features/classMeetings';
 import { htmlToText, linkify, safeHref } from './eventText';
 import './EventPopover.css';
 
@@ -49,7 +51,7 @@ function PopoverCard({ event }: { event: CalEvent }) {
         useStore.getState().selectEvent(null);
       } else if (e.key === 'Tab' && cardRef.current) {
         // Keep focus inside the dialog.
-        const items = cardRef.current.querySelectorAll<HTMLElement>('button, a[href], input');
+        const items = cardRef.current.querySelectorAll<HTMLElement>('button, a[href], input, select');
         const first = items[0];
         const last = items[items.length - 1];
         if (e.shiftKey && document.activeElement === first) {
@@ -110,7 +112,8 @@ function PopoverCard({ event }: { event: CalEvent }) {
             </label>
           )}
 
-          {event.course && (
+          {isMeetingCandidate(event) && <ClassPick event={event} />}
+          {event.course && !isMeetingCandidate(event) && (
             <div className="ep-row">
               <Icon name="school" className="ep-icon" />
               <span>{event.course}</span>
@@ -150,6 +153,36 @@ function PopoverCard({ event }: { event: CalEvent }) {
         </div>
       </div>
     </>
+  );
+}
+
+/** Which class this event (and every event with the same title) is a meeting of. */
+function ClassPick({ event }: { event: CalEvent }) {
+  const classes = useClasses();
+  const match = useClassMatcher()(event);
+  if (!classes.length) return null;
+  const value = match ? (match.source === 'manual' ? match.cls.id : 'auto') : 'none';
+  return (
+    <div className="ep-row class-pick">
+      <Icon name="school" className="ep-icon" />
+      <label className="ep-text">
+        <span className="sr-only">Class</span>
+        <select value={value} onChange={(e) => assignEventTitle(event.title, e.target.value)}>
+          {match?.source === 'auto' && <option value="auto">{match.cls.name} (from the title)</option>}
+          {!match && <option value="none">Not a class</option>}
+          {classes
+            .filter((c) => !(match?.source === 'auto' && c.id === match.cls.id))
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          {match && <option value="none">Not a class</option>}
+          {value !== 'auto' && <option value="auto">Detect automatically</option>}
+        </select>
+        <span className="class-pick-hint">Applies to every “{event.title.trim()}”</span>
+      </label>
+    </div>
   );
 }
 

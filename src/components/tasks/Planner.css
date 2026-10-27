@@ -201,3 +201,5 @@
   .pl-week-sum, .pl-week-axis > span:last-child { display: none; }
 }
 .tb-track.compact .tb-due { top: 1px; width: 16px; height: 16px; margin-left: -8px; }
+.tb-event.class { display: flex; align-items: center; gap: 3px; }
+.tb-event-icon { flex: none; opacity: .9; }
