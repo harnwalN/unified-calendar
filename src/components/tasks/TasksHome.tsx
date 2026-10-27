@@ -13,6 +13,7 @@ import TaskRow from './TaskRow';
 import QuickAdd from './QuickAdd';
 import WeekStrip from './WeekStrip';
 import CalendarPanel from './CalendarPanel';
+import TodayBar from './TodayBar';
 import './TasksHome.css';
 
 export default function TasksHome() {
@@ -46,6 +47,7 @@ export default function TasksHome() {
           </div>
         </SceneryBanner>
 
+        <TodayBar />
         <WeekStrip tasks={tasks} now={now} />
         {calendarOpen && <CalendarPanel />}
 

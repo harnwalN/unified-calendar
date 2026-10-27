@@ -6,6 +6,8 @@ import type { GoogleAccount, IcsFeed, ViewMode } from '../types';
 import Icon from './Icon';
 import TimerPill from './time/TimerPill';
 import StartTimerMenu from './time/StartTimerMenu';
+import SceneMenu from './scenery/SceneMenu';
+import { openFloating, useFloatingWindow } from '../features/floating';
 import { faviconSvg, svgDataUrl } from '../features/favicon';
 import { useMediaQuery, useNarrowDays, useNow } from './hooks';
 import { useShortcuts } from './useShortcuts';
@@ -94,6 +96,7 @@ export default function TopBar() {
         <Clock />
         <SyncIndicator />
         {calendarOpen && <ViewMenu />}
+        <MiniWindowButton />
         <button
           className="icon-btn topbar-time"
           onClick={() => useStore.getState().setTimePageOpen(true)}
@@ -102,6 +105,7 @@ export default function TopBar() {
         >
           <Icon name="bar_chart" />
         </button>
+        <SceneMenu />
         <Accounts />
         <button
           className="icon-btn topbar-settings"
@@ -178,6 +182,27 @@ function SearchBox({
         )}
       </label>
     </div>
+  );
+}
+
+/** Pops out the floating mini window (timer + today's tasks) that stays visible over other tabs. */
+function MiniWindowButton() {
+  const open = useFloatingWindow() !== null;
+  const [blocked, setBlocked] = useState(false);
+  return (
+    <button
+      className={`icon-btn topbar-mini${open ? ' active' : ''}`}
+      onClick={async () => setBlocked(!(await openFloating()))}
+      aria-label="Mini window"
+      aria-pressed={open}
+      title={
+        blocked
+          ? 'Your browser blocked the mini window. Allow pop-ups for this site and try again.'
+          : 'Mini window: your timer and today’s tasks, floating over other tabs'
+      }
+    >
+      <Icon name={blocked ? 'block' : 'picture_in_picture_alt'} />
+    </button>
   );
 }
 

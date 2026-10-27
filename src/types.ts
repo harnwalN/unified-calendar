@@ -78,11 +78,13 @@ export interface Settings {
   syncAccountId?: string;
   /** Landscape art behind the home header; the sun follows the real time of day. */
   scene: SceneId | 'off';
+  /** 'page': the scene fills the whole window behind frosted panels (Gmail-style); 'header': only the home banner. */
+  sceneMode: 'page' | 'header';
   /** Optional location for accurate sunrise/sunset; otherwise estimated from the time zone. */
   sunLocation?: { lat: number; lon: number };
 }
 
-export type SceneId = 'mountains' | 'hills' | 'dunes' | 'coast' | 'city' | 'forest';
+export type SceneId = 'mountains' | 'hills' | 'dunes' | 'coast' | 'city' | 'forest' | 'lake' | 'fields';
 
 export interface SyncStatus {
   state: 'idle' | 'loading' | 'error';

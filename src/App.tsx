@@ -14,6 +14,8 @@ import TimePage from './components/time/TimePage';
 import EventPopover from './components/EventPopover';
 import SettingsDialog from './components/SettingsDialog';
 import Onboarding from './components/Onboarding';
+import SceneBackdrop, { usePageScene } from './components/scenery/SceneBackdrop';
+import FloatingPanel from './components/floating/FloatingPanel';
 
 function useApplyTheme() {
   const theme = useStore((s) => s.settings.theme);
@@ -26,6 +28,7 @@ function useApplyTheme() {
 
 export default function App() {
   const onboarded = useStore((s) => s.onboarded);
+  const pageScene = usePageScene();
   useApplyTheme();
   useDynamicFavicon();
   useSync();
@@ -35,7 +38,8 @@ export default function App() {
   useReminders();
 
   return (
-    <div className="app">
+    <div className={`app${pageScene ? ' has-scene' : ''}`}>
+      {pageScene && <SceneBackdrop />}
       <TopBar />
       <div className="app-body">
         <Sidebar />
@@ -48,6 +52,7 @@ export default function App() {
       <TimePage />
       <EventPopover />
       <SettingsDialog />
+      <FloatingPanel />
       {!onboarded && <Onboarding />}
     </div>
   );

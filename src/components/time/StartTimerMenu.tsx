@@ -22,13 +22,25 @@ export function rankTimerChoices(tasks: TaskView[], recent: TaskRef[], today: st
   return open.sort((a, b) => score(a) - score(b) || (a.due ?? '￿').localeCompare(b.due ?? '￿')).slice(0, MAX_ROWS);
 }
 
+/** The last three distinct tasks that had time logged, most recent first. */
+export function useRecentTimedRefs(): TaskRef[] {
+  const entries = useStore((s) => s.timeEntries);
+  return useMemo(() => {
+    const seen: TaskRef[] = [];
+    for (const e of Object.values(entries).filter((e) => !e.deleted).sort((a, b) => b.end.localeCompare(a.end))) {
+      if (!seen.includes(e.taskRef)) seen.push(e.taskRef);
+      if (seen.length === 3) break;
+    }
+    return seen;
+  }, [entries]);
+}
+
 export default function StartTimerMenu() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const tasks = useTasks();
   const classes = useStore((s) => s.classes);
-  const entries = useStore((s) => s.timeEntries);
 
   useEffect(() => {
     if (!open) return;
@@ -43,14 +55,7 @@ export default function StartTimerMenu() {
     };
   }, [open]);
 
-  const recent = useMemo(() => {
-    const seen: TaskRef[] = [];
-    for (const e of Object.values(entries).filter((e) => !e.deleted).sort((a, b) => b.end.localeCompare(a.end))) {
-      if (!seen.includes(e.taskRef)) seen.push(e.taskRef);
-      if (seen.length === 3) break;
-    }
-    return seen;
-  }, [entries]);
+  const recent = useRecentTimedRefs();
   const choices = useMemo(
     () => (open ? rankTimerChoices(tasks, recent, dayKey(new Date()), query) : []),
     [open, tasks, recent, query],

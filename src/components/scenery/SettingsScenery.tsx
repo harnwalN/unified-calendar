@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useStore } from '../../store';
-import type { SceneId } from '../../types';
 import Icon from '../Icon';
-import SceneArt from './SceneArt';
-import { SCENE_IDS, SCENES } from './scenes';
+import ScenePicker from './ScenePicker';
 import { skyState, useSceneClock, useSunLocation } from './sky';
 import '../Settings.css';
 import './Scenery.css';
@@ -13,9 +11,8 @@ type LocState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'error'; message: 
 
 const round2 = (v: number) => Math.round(v * 100) / 100;
 
-/** Settings → Appearance: pick the header scene and (optionally) a precise location. */
+/** Settings → Appearance: pick the background scene and (optionally) a precise location. */
 export default function SettingsScenery() {
-  const scene = useStore((s) => s.settings.scene);
   const updateSettings = useStore((s) => s.updateSettings);
   const now = useSceneClock();
   const { loc, estimated } = useSunLocation();
@@ -48,32 +45,8 @@ export default function SettingsScenery() {
   return (
     <div className="s-stack">
       <div className="s-field">
-        <span id="scene-label">Header scene</span>
-        <div className="sc-picker" role="radiogroup" aria-labelledby="scene-label">
-          {SCENE_IDS.map((id: SceneId) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={scene === id}
-              className="sc-thumb"
-              onClick={() => updateSettings({ scene: id })}
-            >
-              <span className="sc-thumb__art">
-                <SceneArt scene={id} sky={sky} />
-                {scene === id && <Icon name="check_circle" className="sc-thumb__check" />}
-              </span>
-              <span className="sc-thumb__label">{SCENES[id].label}</span>
-            </button>
-          ))}
-          <button type="button" role="radio" aria-checked={scene === 'off'} className="sc-thumb" onClick={() => updateSettings({ scene: 'off' })}>
-            <span className="sc-thumb__art sc-thumb__art--off">
-              <Icon name="hide_image" />
-              {scene === 'off' && <Icon name="check_circle" className="sc-thumb__check" />}
-            </span>
-            <span className="sc-thumb__label">Off</span>
-          </button>
-        </div>
+        <span id="scene-label">Background scene</span>
+        <ScenePicker labelId="scene-label" />
       </div>
 
       <div className="s-field">

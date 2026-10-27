@@ -365,6 +365,143 @@ function Forest({ p, id }: SceneProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Lake: an alpine lake mirroring the peaks
+// ---------------------------------------------------------------------------
+const L_WATER = 150;
+const L_FAR = ridge(140, [[8, 260, 1.1], [4, 90, 0.3]], 18);
+const L_PEAKS = [
+  { px: 210, py: 74, l: 40, r: 380 },
+  { px: 470, py: 96, l: 330, r: 600 },
+  { px: 720, py: 58, l: 560, r: 900 },
+  { px: 1010, py: 84, l: 860, r: 1180 },
+];
+const L_TREELINE = pineRow(() => L_WATER - 1, 9, 8, 16, 13);
+const L_LEFT = 'M-40 200 V170 Q80 164 190 172 Q260 180 250 200 Z';
+const L_RIGHT = 'M1240 200 V160 Q1120 158 1010 170 Q930 182 950 200 Z';
+const L_PINES: Placed[] = [
+  [20, 44], [58, 56], [102, 38], [150, 46], [196, 30],
+  [990, 34], [1032, 48], [1080, 58], [1126, 42], [1170, 52],
+].map(([x, h]) => ({ x, gy: x < 600 ? 168 + Math.max(0, x - 150) * 0.08 : 163 + Math.max(0, 1060 - x) * 0.07, h }));
+const L_RIPPLES = (() => {
+  const r = rng(29);
+  return Array.from({ length: 16 }, () => ({ x: 260 + r() * 690, y: L_WATER + 8 + r() * 40, w: 10 + r() * 26 }));
+})();
+
+function Lake({ p, id }: SceneProps) {
+  const peaks = (mirror: boolean) =>
+    L_PEAKS.map((m, i) => <Peak key={i} p={p} {...m} gy={L_WATER} color="#6178b4" depth={mirror ? 0.55 : 0.4} snow={m.py < 90} />);
+  return (
+    <>
+      <path d={L_FAR.d} fill={p.c('#8aa3d6', 0.8)} />
+      {peaks(false)}
+      <path d={L_TREELINE} fill={p.c('#3c6f62', 0.45)} />
+      <linearGradient id={`${id}-lw`} x1="0" x2="0" y1={L_WATER} y2={VIEW_H} gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor={p.c('#93c4e8', 0.45)} />
+        <stop offset="1" stopColor={p.c('#2f73ad')} />
+      </linearGradient>
+      <rect x={-40} y={L_WATER} width={VIEW_W + 80} height={VIEW_H - L_WATER} fill={`url(#${id}-lw)`} />
+      <clipPath id={`${id}-lc`}>
+        <rect x={-40} y={L_WATER} width={VIEW_W + 80} height={VIEW_H - L_WATER} />
+      </clipPath>
+      {/* Mirror image of the peaks and treeline, faded into the water. */}
+      <g clipPath={`url(#${id}-lc)`} style={{ opacity: 0.32 }}>
+        <g transform={`translate(0 ${L_WATER * 2}) scale(1 -1)`}>
+          {peaks(true)}
+          <path d={L_TREELINE} fill={p.c('#3c6f62', 0.45)} />
+        </g>
+      </g>
+      <g fill="#ffffff" style={{ opacity: 0.16 + p.pal.ambient * 0.14 }}>
+        {L_RIPPLES.map((w, i) => (
+          <rect key={i} x={w.x} y={w.y} width={w.w} height={1.3} rx={0.65} />
+        ))}
+      </g>
+      <Reflection x={p.sunX} y0={L_WATER} y1={196} color={p.pal.sun} opacity={(p.sunX > 250 && p.sunX < 950 ? 1 : 0) * Math.min(1, p.shadowOpacity * 3) * 0.7} />
+      <clipPath id={`${id}-ls`}>
+        <path d={L_LEFT + L_RIGHT} />
+      </clipPath>
+      <path d={L_LEFT} fill={p.c('#5c9d5f')} />
+      <path d={L_RIGHT} fill={p.c('#5c9d5f')} />
+      <Shadows p={p} clip={`${id}-ls`} items={L_PINES} w={(h) => h * 0.46} />
+      {L_PINES.map((o, i) => (
+        <Pine key={i} p={p} {...o} color="#2c6a4c" />
+      ))}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fields: wheat and lavender rows with a windmill
+// ---------------------------------------------------------------------------
+const FL_FAR = ridge(144, [[7, 340, 0.6], [3, 130, 2.1]]);
+const FL_FAR_TREES = on(FL_FAR, [[90, 16], [112, 12], [380, 14], [404, 18], [1010, 15], [1034, 12]]);
+const FL_MID = ridge(160, [[8, 480, 2.4], [3, 170, 0.2]]);
+const FL_NEAR = ridge(176, [[7, 640, 0.9], [3, 210, 1.7]]);
+const FL_VANISH = { x: 560, y: 128 };
+// Lavender rows: thin wedges fanning out from a vanishing point, clipped to the near field.
+const FL_ROWS = (() => {
+  let d = '';
+  for (let k = -24; k <= 24; k++) {
+    const x = FL_VANISH.x + k * 64;
+    d += `M${FL_VANISH.x + k * 1.4} ${FL_VANISH.y} L${x - 15} ${VIEW_H + 10} L${x + 15} ${VIEW_H + 10} Z`;
+  }
+  return d;
+})();
+const FL_MILL = { x: 905, gy: FL_MID.y(905) + 2, h: 50 };
+const FL_HOUSE = { x: 300, gy: FL_MID.y(300) + 2, w: 30, h: 15 };
+
+function Fields({ p, id }: SceneProps) {
+  const { x, gy, h } = FL_MILL;
+  const lit = p.sunLeftOf(x);
+  const top = gy - h;
+  const hub = { x, y: top + 4 };
+  const blades = [20, 110, 200, 290].map((a) => {
+    const r = (a * Math.PI) / 180;
+    const ex = hub.x + Math.cos(r) * 30;
+    const ey = hub.y + Math.sin(r) * 30;
+    const nx = -Math.sin(r) * 3.2;
+    const ny = Math.cos(r) * 3.2;
+    return `M${hub.x} ${hub.y} L${ex + nx} ${ey + ny} L${ex - nx * 0.4} ${ey - ny * 0.4} Z`;
+  });
+  const hb = FL_HOUSE;
+  const roofLit = p.sunLeftOf(hb.x);
+  return (
+    <>
+      <path d={FL_FAR.d} fill={p.c('#9cc98a', 0.7)} />
+      {FL_FAR_TREES.map((o, i) => (
+        <RoundTree key={i} p={p} {...o} depth={0.6} color="#5a9e5a" />
+      ))}
+      <clipPath id={`${id}-fm`}>
+        <path d={FL_MID.d} />
+      </clipPath>
+      <path d={FL_MID.d} fill={p.c('#e6c56a', 0.3)} />
+      <Shadows p={p} clip={`${id}-fm`} items={[{ x, gy, h: h - 10 }]} w={() => 14} />
+      <Shadows p={p} clip={`${id}-fm`} items={[{ x: hb.x, gy: hb.gy, h: hb.h + 8 }]} w={() => hb.w} box />
+      {/* Farmhouse */}
+      <g>
+        <rect x={hb.x - hb.w / 2} y={hb.gy - hb.h} width={hb.w} height={hb.h} fill={p.c('#f3ead8', 0.3)} />
+        <polygon points={`${hb.x - hb.w / 2 - 3},${hb.gy - hb.h} ${hb.x},${hb.gy - hb.h - 11} ${hb.x},${hb.gy - hb.h}`} fill={p.face('#c8584c', 0.3, roofLit)} />
+        <polygon points={`${hb.x},${hb.gy - hb.h - 11} ${hb.x + hb.w / 2 + 3},${hb.gy - hb.h} ${hb.x},${hb.gy - hb.h}`} fill={p.face('#c8584c', 0.3, !roofLit)} />
+        <rect x={hb.x - 9} y={hb.gy - 10} width={5} height={5} fill={p.night > 0.3 ? '#ffd76a' : p.c('#7d93b0', 0.3)} />
+        <rect x={hb.x + 4} y={hb.gy - 10} width={5} height={5} fill={p.night > 0.3 ? '#ffd76a' : p.c('#7d93b0', 0.3)} />
+      </g>
+      {/* Windmill: tapered tower, cap and four sails */}
+      <g>
+        <polygon points={`${x - 8},${gy} ${x - 4},${top + 6} ${x},${top + 6} ${x},${gy}`} fill={p.face('#f1ece2', 0.3, lit)} />
+        <polygon points={`${x},${gy} ${x},${top + 6} ${x + 4},${top + 6} ${x + 8},${gy}`} fill={p.face('#f1ece2', 0.3, !lit)} />
+        <polygon points={`${x - 6},${top + 7} ${x},${top - 2} ${x + 6},${top + 7}`} fill={p.c('#8a5a48', 0.3)} />
+        <path d={blades.join('')} fill={p.c('#d9d2c4', 0.3)} />
+        <circle cx={hub.x} cy={hub.y} r={2.2} fill={p.c('#5b4a40', 0.3)} />
+      </g>
+      <clipPath id={`${id}-fn`}>
+        <path d={FL_NEAR.d} />
+      </clipPath>
+      <path d={FL_NEAR.d} fill={p.c('#9a86c9')} />
+      <path d={FL_ROWS} fill={p.c('#6c58a6')} clipPath={`url(#${id}-fn)`} />
+    </>
+  );
+}
+
 export const SCENES: Record<SceneId, SceneDef> = {
   mountains: { label: 'Mountains', horizon: 150, Draw: Mountains },
   hills: { label: 'Hills', horizon: 150, Draw: Hills },
@@ -372,6 +509,8 @@ export const SCENES: Record<SceneId, SceneDef> = {
   coast: { label: 'Coast', horizon: C_SEA, Draw: Coast },
   city: { label: 'City', horizon: 160, Draw: City },
   forest: { label: 'Forest', horizon: 150, Draw: Forest },
+  lake: { label: 'Lake', horizon: L_WATER, Draw: Lake },
+  fields: { label: 'Fields', horizon: 156, Draw: Fields },
 };
 
 export const SCENE_IDS = Object.keys(SCENES) as SceneId[];

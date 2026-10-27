@@ -175,3 +175,7 @@
   /* With date navigation shown too, the pill (tap → task) stands in for the Time button. */
   .topbar.timing.calendar .topbar-time { display: none; }
 }
+.topbar-mini.active { background: var(--primary-container); color: var(--on-primary-container); }
+@media (max-width: 599px) {
+  .topbar .scene-menu, .topbar .topbar-mini { display: none; }
+}
