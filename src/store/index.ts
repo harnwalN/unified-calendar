@@ -141,6 +141,7 @@ const defaultSettings: Settings = {
   reminderOffsetsMin: [1440, 60],
   hideCompleted: false,
   scene: 'mountains',
+  sceneMode: 'page',
 };
 
 /** Remove everything belonging to one source key. */

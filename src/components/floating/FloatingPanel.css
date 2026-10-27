@@ -1,0 +1,59 @@
+/* Mini window (Picture-in-Picture / popup). Lives in its own document; the app's stylesheets are copied in. */
+body.floating-body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow-y: auto; }
+.mini { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 14px; }
+.mini-head { display: flex; align-items: baseline; gap: 8px; }
+.mini-time { font-family: var(--font); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.mini-date { flex: 1; font-size: 13px; color: var(--text-2); }
+.mini-head .icon-btn { align-self: center; }
+
+.mini-timer {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-l);
+  background: var(--surface-2);
+}
+.mini-timer.running { background: color-mix(in srgb, var(--danger) 10%, var(--surface)); box-shadow: inset 3px 0 0 var(--danger); }
+.mini-timer-task { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mini-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--task-color); }
+.mini-timer-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.mini-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mini-clock { font-family: var(--font); font-size: 34px; font-weight: 500; line-height: 40px; font-variant-numeric: tabular-nums; color: var(--danger); }
+.mini-stop {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 36px; padding: 0 14px 0 10px;
+  border: 0; border-radius: 18px;
+  background: var(--danger); color: #fff;
+  font-family: var(--font); font-weight: 500; cursor: pointer;
+}
+.mini-stop:hover { filter: brightness(1.08); }
+.mini-sub { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; color: var(--text-2); }
+.mini-choices { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.mini-choices button {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  min-height: 34px; padding: 0 10px 0 6px;
+  border: 0; border-radius: var(--radius-m);
+  background: transparent; text-align: left; cursor: pointer;
+}
+.mini-choices button:hover { background: var(--surface-3); }
+.mini-choices .material-symbols-outlined { color: var(--task-color); }
+.mini-choices span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mini-next { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0 4px; font-size: 13px; color: var(--text-2); }
+.mini-next > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-next strong { color: var(--text); font-weight: 500; }
+
+.mini-today h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; padding: 0 4px; font-family: var(--font); font-size: 14px; font-weight: 500; }
+.mini-count { min-width: 20px; height: 18px; padding: 0 6px; border-radius: 9px; background: var(--surface-3); font-size: 11px; line-height: 18px; text-align: center; color: var(--text-2); }
+.mini-today ul { margin: 0; padding: 0; list-style: none; }
+.mini-row { display: flex; align-items: center; gap: 4px; min-height: 42px; padding: 0 2px; border-radius: var(--radius-m); }
+.mini-row:hover { background: var(--surface-3); }
+.mini-row.timing { background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.mini-check { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--task-color); cursor: pointer; }
+.mini-check[aria-checked='true'] .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+.mini-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mini-row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.mini-row-due { font-size: 11px; color: var(--text-3); }
+.mini-row-due.overdue { color: var(--danger); }
+.mini-play { color: var(--text-2); }
+.mini-row.timing .mini-play { color: var(--danger); }
+.mini-none { margin: 0; padding: 6px 6px; font-size: 13px; color: var(--text-3); }
