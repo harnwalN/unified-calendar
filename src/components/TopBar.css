@@ -179,3 +179,27 @@
 @media (max-width: 599px) {
   .topbar .scene-menu, .topbar .topbar-mini { display: none; }
 }
+
+/* Live date tile (logo). Mirrors the tab icon but uses the UI font. */
+.brand-tile {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  margin: 2px;
+  padding-bottom: 2px;
+  border: 2px solid var(--tile-color);
+  border-radius: 7px;
+  background: #fff linear-gradient(var(--tile-color), var(--tile-color)) top / 100% 6px no-repeat;
+  transition: border-color 1s, background-color 1s;
+}
+.brand-tile-num {
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -.02em;
+  color: var(--tile-color);
+}

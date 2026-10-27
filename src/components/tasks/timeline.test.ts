@@ -5,11 +5,13 @@ const at = (h: number, m = 0) => new Date(2026, 9, 26, h, m).getTime();
 
 describe('today bar layout', () => {
   it('uses the waking day and widens it for early or late spans and the current time', () => {
-    const now = new Date(2026, 9, 26, 12);
-    expect(hourRange([], now)).toEqual([7, 23]);
-    expect(hourRange([{ id: 'a', start: at(5, 30), end: at(6, 30) }], now)).toEqual([5, 23]);
-    expect(hourRange([{ id: 'a', start: at(22), end: at(23, 30) }], now)).toEqual([7, 24]);
-    expect(hourRange([], new Date(2026, 9, 26, 1, 15))).toEqual([1, 23]);
+    const day = at(0);
+    expect(hourRange([], day, at(12))).toEqual([7, 23]);
+    expect(hourRange([{ id: 'a', start: at(5, 30), end: at(6, 30) }], day)).toEqual([5, 23]);
+    expect(hourRange([{ id: 'a', start: at(22), end: at(23, 30) }], day)).toEqual([7, 24]);
+    expect(hourRange([], day, at(1, 15))).toEqual([1, 23]);
+    // `now` on another day doesn't widen the range.
+    expect(hourRange([], day, at(1, 15) + 86_400_000)).toEqual([7, 23]);
   });
 
   it('stacks overlapping spans into lanes', () => {

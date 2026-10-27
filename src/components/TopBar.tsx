@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { format } from 'date-fns';
 import { sourceKeyFor, useStore } from '../store';
-import { stepCursor, viewTitle } from '../lib/time';
 import type { GoogleAccount, IcsFeed, ViewMode } from '../types';
 import Icon from './Icon';
 import TimerPill from './time/TimerPill';
 import StartTimerMenu from './time/StartTimerMenu';
 import SceneMenu from './scenery/SceneMenu';
 import { openFloating, useFloatingWindow } from '../features/floating';
-import { faviconSvg, svgDataUrl } from '../features/favicon';
-import { useMediaQuery, useNarrowDays, useNow } from './hooks';
+import { timeOfDayColor } from '../features/favicon';
+import { useNarrowDays, useNow } from './hooks';
 import { useShortcuts } from './useShortcuts';
 import './TopBar.css';
 
@@ -21,16 +20,11 @@ const VIEWS: { id: ViewMode; label: string; key: string }[] = [
 ];
 
 export default function TopBar() {
-  const view = useStore((s) => s.view);
-  const cursorIso = useStore((s) => s.cursor);
-  const weekStartsOn = useStore((s) => s.settings.weekStartsOn);
   const sidebarOpen = useStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
-  const setCursor = useStore((s) => s.setCursor);
   const calendarOpen = useStore((s) => s.calendarOpen);
   const timing = useStore((s) => s.runningTimer !== null);
   const narrowDays = useNarrowDays();
-  const phone = useMediaQuery('(max-width: 599px)');
 
   const searchRef = useRef<HTMLInputElement>(null);
   const [searchExpanded, setSearchExpanded] = useState(false);
@@ -40,16 +34,6 @@ export default function TopBar() {
     requestAnimationFrame(() => searchRef.current?.focus());
   }, []);
   useShortcuts(focusSearch, narrowDays);
-
-  const cursor = new Date(cursorIso);
-  const step = (dir: 1 | -1) => setCursor(stepCursor(view, cursor, dir, narrowDays));
-  const fullTitle = viewTitle(view, cursor, weekStartsOn, narrowDays);
-  // Phones get abbreviated months; multi-month week titles are already short.
-  const title =
-    phone && !fullTitle.includes('–')
-      ? format(cursor, view === 'day' ? 'MMM d, yyyy' : 'MMM yyyy')
-      : fullTitle;
-  const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
 
   return (
     <header className={`topbar${timing ? ' timing' : ''}${calendarOpen ? ' calendar' : ''}`}>
@@ -69,26 +53,7 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* Calendar navigation only matters while the full calendar is expanded. */}
-      {calendarOpen ? (
-        <nav className="topbar-nav" aria-label="Date navigation">
-          <button className="outline-btn topbar-today" onClick={() => setCursor(new Date())} title="Today (T)">
-            <span className="topbar-today-label">Today</span>
-            <Icon name="today" className="topbar-today-icon" />
-          </button>
-          <button className="icon-btn small" onClick={() => step(-1)} aria-label={`Previous ${unit}`} title={`Previous ${unit} (K)`}>
-            <Icon name="chevron_left" />
-          </button>
-          <button className="icon-btn small" onClick={() => step(1)} aria-label={`Next ${unit}`} title={`Next ${unit} (J)`}>
-            <Icon name="chevron_right" />
-          </button>
-          <h1 className="topbar-title" aria-live="polite">
-            {title}
-          </h1>
-        </nav>
-      ) : (
-        <div className="topbar-spacer" />
-      )}
+      <div className="topbar-spacer" />
 
       <div className="topbar-end">
         {timing ? <TimerPill /> : <StartTimerMenu />}
@@ -206,10 +171,14 @@ function MiniWindowButton() {
   );
 }
 
-/** Logo = today's live date tile (same art as the tab icon, without the stopwatch). */
+/** Logo = today's live date tile (same design as the tab icon), set in the UI font. */
 function BrandIcon() {
   const now = useNow(60_000);
-  return <img src={svgDataUrl(faviconSvg(now))} alt="" width={36} height={36} />;
+  return (
+    <span className="brand-tile" style={{ '--tile-color': timeOfDayColor(now) } as CSSProperties} aria-hidden="true">
+      <span className="brand-tile-num">{now.getDate()}</span>
+    </span>
+  );
 }
 
 function Clock() {
