@@ -3,6 +3,7 @@
 body.floating-body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 13px; overflow-y: auto; }
 .mini {
   --mini-glass: color-mix(in srgb, var(--surface) 80%, transparent);
+  --mini-track: color-mix(in srgb, var(--text) 4%, transparent);
   position: relative;
   isolation: isolate;
   display: flex;
@@ -65,7 +66,10 @@ body.floating-body { margin: 0; background: var(--bg); color: var(--text); font-
   display: flex; align-items: center; gap: 2px; min-height: 34px; padding: 0 2px; border-radius: var(--radius-s);
   transition: background-color .12s, --progress 600ms var(--ease-out-quint);
   /* Same progress background as the app's task rows (TaskRow.css): green done share, priority tint for the rest. */
-  background-image: linear-gradient(to right, var(--progress-tint) var(--progress, 0%), var(--prio-tint, transparent) var(--progress, 0%));
+  /* Unlike the app's divided list, mini rows are separate pills: a faint track keeps their edges even. */
+  background-image:
+    linear-gradient(to right, transparent calc(var(--progress, 0%) - 2px), var(--progress-edge, transparent) calc(var(--progress, 0%) - 2px) var(--progress, 0%), transparent var(--progress, 0%)),
+    linear-gradient(to right, var(--progress-tint) var(--progress, 0%), var(--prio-tint, var(--mini-track)) var(--progress, 0%));
   --text-3: var(--text-3-on-tint);
 }
 .mini-row + .mini-row { margin-top: 2px; }
