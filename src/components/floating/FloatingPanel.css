@@ -61,9 +61,18 @@ body.floating-body { margin: 0; background: var(--bg); color: var(--text); font-
 .mini-today h2 { display: flex; align-items: center; gap: 6px; margin: 0 0 2px; padding: 0 6px; font-family: var(--font); font-size: 13px; font-weight: 500; }
 .mini-count { min-width: 18px; height: 16px; padding: 0 5px; border-radius: 8px; background: var(--surface-3); font-size: 10px; line-height: 16px; text-align: center; color: var(--text-2); }
 .mini-today ul { margin: 0; padding: 0; list-style: none; }
-.mini-row { display: flex; align-items: center; gap: 2px; min-height: 34px; padding: 0 2px; border-radius: var(--radius-s); }
-.mini-row:hover { background: var(--surface-3); }
-.mini-row.timing { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.mini-row {
+  display: flex; align-items: center; gap: 2px; min-height: 34px; padding: 0 2px; border-radius: var(--radius-s);
+  transition: background-color .12s, --progress 600ms var(--ease-out-quint);
+  /* Same progress background as the app's task rows (TaskRow.css): green done share, priority tint for the rest. */
+  background-image: linear-gradient(to right, var(--progress-tint) var(--progress, 0%), var(--prio-tint, transparent) var(--progress, 0%));
+  --text-3: var(--text-3-on-tint);
+}
+.mini-row + .mini-row { margin-top: 2px; }
+.mini-row:hover { background-color: var(--surface-3); }
+.mini-row.timing { background-color: color-mix(in srgb, var(--danger) 10%, transparent); }
+.mini-sub-row .mini-check { color: color-mix(in srgb, var(--task-color) 70%, var(--text-3)); }
+.mini-row-due .overdue { color: var(--danger); }
 .mini-check { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--task-color); cursor: pointer; }
 .mini-check .material-symbols-outlined { font-size: 20px; }
 .mini-check[aria-checked='true'] .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
@@ -85,6 +94,11 @@ body.floating-body { margin: 0; background: var(--bg); color: var(--text); font-
 .mini-add:focus-within { border-color: var(--primary); color: var(--primary); }
 .mini-add input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--text); font-size: 13px; }
 .mini-add input:focus-visible { outline: none; }
+.mini-add-more {
+  display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
+  border: 0; border-radius: 50%; background: none; color: var(--text-3); cursor: pointer;
+}
+.mini-add-more:hover { background: var(--surface-3); color: var(--text); }
 .mini-add-go {
   display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
   border: 0; border-radius: 50%; background: var(--primary); color: var(--on-primary); cursor: pointer;
