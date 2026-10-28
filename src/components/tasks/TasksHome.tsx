@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { useStore } from '../../store';
 import { useTasks } from '../../store/tasks';
 import { useVisibleEvents } from '../../store/selectors';
+import { isSkippedMeeting, useClassMatcher } from '../../features/classMeetings';
 import type { TaskView } from '../../types';
 import Icon from '../Icon';
 import SceneryBanner from '../scenery/SceneryBanner';
@@ -389,7 +390,8 @@ function QuickSection({
   onToggle: (id: string) => void;
 }) {
   const events = useVisibleEvents();
-  const gap = useMemo(() => freeMinutes(events, now), [events, now]);
+  const match = useClassMatcher();
+  const gap = useMemo(() => freeMinutes(events, now, (e) => isSkippedMeeting(match, e)), [events, now, match]);
   const [hintDismissed, setHintDismissed] = useState(false);
   const fits = (t: TaskView) => gap > 0 && fitsGap(t, gap);
   const fitting = group.open.filter(fits).length;

@@ -41,6 +41,19 @@ describe('class meetings', () => {
     expect(spans.map((s) => (s.end - s.start) / 60_000)).toEqual([60, 30]);
   });
 
+  it('flags skipped occurrences and leaves them out of meeting time', () => {
+    const skipping = [{ ...classes[0], skipped: { '1': '2026-10-26T16:00:00.000Z' } }, classes[1]];
+    const match = makeClassMatcher(skipping);
+    const day = new Date(2026, 9, 26).getTime();
+    const at = (h: number) => new Date(day + h * 3_600_000).toISOString();
+    const lecture = ev('1', 'CSE 110 Lecture', at(9), at(10));
+    const discussion = ev('2', 'CSE 110 Discussion', at(14), at(15));
+    expect(match(lecture)).toMatchObject({ skipped: true });
+    expect(match(discussion)).toMatchObject({ skipped: false });
+    const spans = meetingSpans([lecture, discussion], match, day, day + 24 * 3_600_000, day + 16 * 3_600_000);
+    expect(spans.map((s) => s.title)).toEqual(['CSE 110 Discussion']);
+  });
+
   it('asks about repeating events no class claims', () => {
     const match = makeClassMatcher(classes);
     const evs = [

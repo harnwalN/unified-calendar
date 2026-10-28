@@ -175,6 +175,8 @@ export interface ClassInfo extends Synced {
   meetingTitles?: string[];
   /** Added by hand in the app rather than created from an assignment's course. */
   manual?: boolean;
+  /** Meetings the user isn't attending (cancelled, skipped): `CalEvent.id` → occurrence start (ISO, for pruning). */
+  skipped?: Record<string, string>;
 }
 
 /** Identifies a task: `a:<CalEvent.uid>` for assignments, `t:<PersonalTask.id>` for personal tasks. */

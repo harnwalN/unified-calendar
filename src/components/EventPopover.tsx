@@ -4,7 +4,7 @@ import { plannedTaskRef, useAllEvents, useCalendarColor } from '../store/selecto
 import { describeWhen } from '../lib/time';
 import type { CalEvent, SourceKind } from '../types';
 import Icon from './Icon';
-import { assignEventTitle, codesInTitle, isMeetingCandidate, useClassMatcher } from '../features/classMeetings';
+import { assignEventTitle, codesInTitle, isMeetingCandidate, setMeetingSkipped, useClassMatcher } from '../features/classMeetings';
 import ClassSelect from './ClassSelect';
 import { htmlToText, linkify, safeHref } from './eventText';
 import './EventPopover.css';
@@ -113,6 +113,7 @@ function PopoverCard({ event }: { event: CalEvent }) {
           )}
 
           {isMeetingCandidate(event) && <ClassPick event={event} />}
+          {isMeetingCandidate(event) && <Attendance event={event} />}
           {event.course && !isMeetingCandidate(event) && (
             <div className="ep-row">
               <Icon name="school" className="ep-icon" />
@@ -179,6 +180,26 @@ function ClassPick({ event }: { event: CalEvent }) {
         <span className="class-pick-hint">Applies to every “{event.title.trim()}”</span>
       </div>
     </div>
+  );
+}
+
+/** Mark this one occurrence of a class meeting as not attending (cancelled or skipped). */
+function Attendance({ event }: { event: CalEvent }) {
+  const match = useClassMatcher()(event);
+  if (!match) return null;
+  const { cls, skipped } = match;
+  return (
+    <label className={`ep-row ep-attend${skipped ? ' skipped' : ''}`}>
+      <span className="ep-icon">
+        <input type="checkbox" checked={skipped} onChange={() => setMeetingSkipped(cls.id, event, !skipped)} />
+      </span>
+      <span className="ep-text">
+        Not attending
+        <span className="class-pick-hint">
+          {skipped ? `Doesn't count toward ${cls.name} time or block your schedule` : 'Cancelled or skipping just this one'}
+        </span>
+      </span>
+    </label>
   );
 }
 

@@ -8,6 +8,7 @@ import { parseQuickAdd } from '../../lib/quickAdd';
 import SceneArt from '../scenery/SceneArt';
 import { skyState, useSceneClock, useSceneId, useSunLocation } from '../scenery/sky';
 import { useVisibleEvents } from '../../store/selectors';
+import { isSkippedMeeting, useClassMatcher } from '../../features/classMeetings';
 import { closeFloating, FLOATING_ROOT_ID, syncTheme, useFloatingWindow } from '../../features/floating';
 import { startTimer, stopTimer, toggleTimer, useTaskLabeler } from '../../features/timer';
 import { formatClock } from '../../features/timeStats';
@@ -208,9 +209,12 @@ function TimerCard({ now }: { now: Date }) {
 
 function NextEvent({ now }: { now: Date }) {
   const events = useVisibleEvents();
+  const match = useClassMatcher();
   const t = now.getTime();
   const end = startOfDay(now).getTime() + DAY;
-  const upcoming = events.filter((e) => !e.allDay && e.kind !== 'assignment' && Date.parse(e.end) > t && Date.parse(e.start) < end);
+  const upcoming = events.filter(
+    (e) => !e.allDay && e.kind !== 'assignment' && Date.parse(e.end) > t && Date.parse(e.start) < end && !isSkippedMeeting(match, e),
+  );
   const cur = upcoming.find((e) => Date.parse(e.start) <= t);
   const next = upcoming.find((e) => Date.parse(e.start) > t);
   const ev = cur ?? next;

@@ -116,7 +116,7 @@ export default function Planner() {
   );
 }
 
-const classMs = (d: DayData) => d.spans.reduce((sum, s) => sum + (s.className ? s.end - s.start : 0), 0);
+const classMs = (d: DayData) => d.spans.reduce((sum, s) => sum + (s.className && !s.skipped ? s.end - s.start : 0), 0);
 const trackedMs = (d: DayData) => d.tracked.reduce((sum, s) => sum + (s.end - s.start), 0);
 
 function DayMode({ data, now }: { data: DayData; now: number }) {
@@ -127,8 +127,9 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
 
   let status: ReactNode;
   if (isToday) {
-    const current = data.spans.find((s) => s.start <= now && s.end > now);
-    const next = data.spans.filter((s) => s.start > now).sort((a, b) => a.start - b.start)[0];
+    const attending = data.spans.filter((s) => !s.skipped);
+    const current = attending.find((s) => s.start <= now && s.end > now);
+    const next = attending.filter((s) => s.start > now).sort((a, b) => a.start - b.start)[0];
     status = current ? (
       <>
         Now: <strong>{current.event.title}</strong> until {format(current.end, 'h:mm a')}
