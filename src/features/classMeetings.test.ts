@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CalEvent, ClassInfo } from '../types';
-import { codesInTitle, eventTitleKey, makeClassMatcher, meetingSpans, unclassifiedRecurring } from './classMeetings';
+import { codesInTitle, eventTitleKey, makeClassMatcher, meetingSpans, suggestClassName, unclassifiedRecurring } from './classMeetings';
 
 const cls = (id: string, name: string, aliases: string[], meetingTitles?: string[]): ClassInfo => ({
   id, name, color: '#123456', aliases, order: 0, meetingTitles, updatedAt: 0,
@@ -50,5 +50,15 @@ describe('class meetings', () => {
       ev('7', 'Standup', 'a', 'b'), ev('8', 'Standup', 'c', 'd'),
     ];
     expect(unclassifiedRecurring(evs, match, [eventTitleKey('Standup')])).toEqual([{ key: 'bio lab', title: 'Bio Lab', count: 3 }]);
+  });
+
+  it('suggests a class name from an event title', () => {
+    expect(suggestClassName('CSE 110 Lecture')).toBe('CSE 110');
+    expect(suggestClassName('Lecture: math183 (Center 115)')).toBe('MATH 183');
+    expect(suggestClassName('Writing Workshop')).toBe('Writing');
+    expect(suggestClassName('Physics - Discussion')).toBe('Physics');
+    expect(suggestClassName('Intro to Film (Lab)')).toBe('Intro to Film');
+    expect(suggestClassName('  Lab  ')).toBe('Lab');
+    expect(suggestClassName('Piano lessons')).toBe('Piano lessons');
   });
 });
