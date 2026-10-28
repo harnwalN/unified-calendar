@@ -6,7 +6,6 @@ import type { Priority, TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
 import { doDateLabel, dueLabel, formatDuration, formatEstimate } from './format';
 import { deleteTaskWithUndo } from './TaskDetail';
-import ScheduleForm from './ScheduleForm';
 import { progressVars } from './progress';
 import { format } from 'date-fns';
 import './TaskRow.css';
@@ -120,7 +119,6 @@ export default function TaskRow({ task, now, showClass = true, highlight }: Prop
         >
           <Icon name={running ? 'stop' : 'play_arrow'} />
         </button>
-        {!done && <ScheduleButton task={task} />}
         <RowMenu task={task} />
       </div>
     </li>
@@ -180,43 +178,6 @@ function nextBlockLabel(startIso: string, now: Date): string {
   const d = new Date(startIso);
   const day = dayKey(d) === dayKey(now) ? 'Today' : d.getTime() - now.getTime() < 6 * 86_400_000 ? format(d, 'EEE') : format(d, 'MMM d');
   return `${day} ${format(d, 'h:mm a')}`;
-}
-
-function ScheduleButton({ task }: { task: TaskView }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: Event) => {
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', close);
-    document.addEventListener('keydown', close);
-    return () => {
-      document.removeEventListener('pointerdown', close);
-      document.removeEventListener('keydown', close);
-    };
-  }, [open]);
-  return (
-    <div className="task-menu" ref={ref}>
-      <button
-        className="icon-btn small task-schedule"
-        onClick={() => setOpen(!open)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={`Schedule time for ${task.title}`}
-        title="Schedule work time"
-      >
-        <Icon name="edit_calendar" />
-      </button>
-      {open && (
-        <div className="sched-pop" role="dialog" aria-label={`Schedule ${task.title}`}>
-          <p className="sched-pop-title">Schedule “{task.title}”</p>
-          <ScheduleForm task={task} onScheduled={() => setOpen(false)} />
-        </div>
-      )}
-    </div>
-  );
 }
 
 function RowMenu({ task }: { task: TaskView }) {
