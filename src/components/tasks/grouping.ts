@@ -1,7 +1,7 @@
 // Pure home-screen logic: which section each task lands in, ordering, weekly progress,
 // free time before the next event, and per-day load for the week strip.
 import { addDays, startOfDay, startOfWeek } from 'date-fns';
-import type { CalEvent, ClassInfo, Priority, TaskView } from '../../types';
+import type { CalEvent, ClassInfo, Priority, Subtask, TaskView } from '../../types';
 import { dayKey } from '../../store/tasks';
 
 /** Not-done assignments overdue by more than this many days drop out of Today (stale feed items). */
@@ -31,8 +31,16 @@ export interface ClassSection extends TaskGroup {
   overdue: number;
 }
 
+/** A dated subtask shown as its own item (Today, the planner's day view), with its parent task. */
+export interface SubtaskItem {
+  parent: TaskView;
+  sub: Subtask & { doDate: string };
+}
+
 export interface HomeSections {
   today: TaskView[];
+  /** Open subtasks planned for today or earlier whose parent isn't in Today itself (it lists them nested). */
+  todaySubtasks: SubtaskItem[];
   classes: ClassSection[];
   personal: TaskGroup;
   quick: TaskGroup;
@@ -100,6 +108,7 @@ export function groupTasks(tasks: TaskView[], classes: ClassInfo[], now: Date, w
   const other = emptyClassSection('other', 'Other');
   const out: HomeSections = {
     today: [],
+    todaySubtasks: [],
     classes: [],
     personal: { open: [], done: [] },
     quick: { open: [], done: [] },
@@ -135,13 +144,22 @@ export function groupTasks(tasks: TaskView[], classes: ClassInfo[], now: Date, w
     if (isTodayTask(t, now)) {
       out.today.push(t);
       if (cls) cls.inToday++;
-    } else if (done) section.done.push(t);
+      continue;
+    }
+    if (!done) {
+      for (const sub of t.subtasks) {
+        if (!sub.done && sub.doDate && sub.doDate <= todayKey) out.todaySubtasks.push({ parent: t, sub: { ...sub, doDate: sub.doDate } });
+      }
+    }
+    if (done) section.done.push(t);
     else if (cls && isStale(t, now)) cls.stale.push(t);
     else section.open.push(t);
   }
 
   // Overdue first, then the normal order.
   out.today.sort((a, b) => Number(isOverdue(b, now)) - Number(isOverdue(a, now)) || compareTasks(a, b));
+  // Missed days first, then by the parent's deadline; a parent's subtasks keep their own order.
+  out.todaySubtasks.sort((a, b) => (a.sub.doDate < b.sub.doDate ? -1 : a.sub.doDate > b.sub.doDate ? 1 : 0) || compareTasks(a.parent, b.parent));
   const finish = (g: TaskGroup) => {
     g.open.sort(compareTasks);
     g.done.sort(compareDoneTasks);
@@ -156,6 +174,15 @@ export function groupTasks(tasks: TaskView[], classes: ClassInfo[], now: Date, w
   out.classes = [...byClass.values()];
   const otherUsed = other.open.length + other.done.length + other.stale.length + other.inToday;
   if (otherUsed) out.classes.push(other);
+  return out;
+}
+
+/** Every subtask planned for `day` (`yyyy-MM-dd`), done or not, in parent-deadline order. */
+export function subtasksOnDay(tasks: TaskView[], day: string): SubtaskItem[] {
+  const out: SubtaskItem[] = [];
+  for (const t of [...tasks].sort(compareTasks)) {
+    for (const sub of t.subtasks) if (sub.doDate === day) out.push({ parent: t, sub: { ...sub, doDate: sub.doDate } });
+  }
   return out;
 }
 

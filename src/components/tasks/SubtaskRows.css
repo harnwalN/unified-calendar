@@ -1,0 +1,90 @@
+/* ---- nested subtasks under a task row: a tree line from the parent's checkbox ---- */
+.task-subs { --sub-x: 27px; position: relative; margin: -8px 0 4px; padding: 0; list-style: none; }
+.task-subs ul {
+  margin: 0 0 0 var(--sub-x);
+  padding: 2px 8px 2px 0;
+  border-left: 2px solid color-mix(in srgb, var(--task-color) 35%, transparent);
+  list-style: none;
+}
+.sub-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 6px 0 14px;
+  border-radius: var(--radius-s);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+/* Elbow joining each item to the tree line. */
+.sub-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 10px;
+  border-top: 2px solid color-mix(in srgb, var(--task-color) 35%, transparent);
+}
+.sub-item:hover { background: var(--surface-3); }
+.sub-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub-item.done .sub-title { color: var(--text-3); text-decoration: line-through; }
+.sub-date {
+  flex: none;
+  padding: 0 6px;
+  border-radius: var(--radius-s);
+  background: var(--surface-3);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-2);
+}
+.sub-date.today { background: var(--primary-container); color: var(--on-primary-container); }
+.sub-date.missed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.sub-item.done .sub-date { background: none; color: var(--text-3); }
+
+.sub-check {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.sub-check::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 2px solid var(--task-color, var(--primary));
+  border-radius: 50%;
+}
+.sub-check:hover::before { background: color-mix(in srgb, var(--task-color, var(--primary)) 14%, transparent); }
+.sub-check.done::before { background: var(--task-color, var(--primary)); }
+.sub-check .material-symbols-outlined { position: relative; font-size: 12px; font-weight: 700; color: #fff; }
+
+/* Keep the row dividers after a nested list. */
+.task-subs + .task-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 48px;
+  right: 8px;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* ---- a dated subtask as its own row in Today ---- */
+.sub-row-check { display: grid; place-items: center; flex: none; width: 40px; height: 40px; }
+.sub-row .task-title { font-size: 14px; }
+.task-meta > .sub-parent { display: block; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); font-weight: 500; }
+.sub-parent > span[aria-hidden] { color: var(--task-color); font-weight: 700; }
+.task-plan.sub-missed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+
+@media (max-width: 599px) {
+  .task-subs { --sub-x: 19px; }
+  .task-subs + .task-row::before { left: 40px; }
+}

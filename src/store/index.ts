@@ -16,6 +16,7 @@ import type {
   TaskMeta,
   TaskRef,
   TaskStatus,
+  Subtask,
   TimeEntry,
   ViewMode,
 } from '../types';
@@ -105,6 +106,8 @@ export interface AppState extends SyncedData {
   setTaskStatus: (ref: TaskRef, status: TaskStatus) => void;
   /** Patch planning fields on either kind of task. */
   updateTaskFields: (ref: TaskRef, patch: Partial<TaskFields>) => void;
+  /** Patch one subtask of either kind of task (e.g. check it off from its Today row). */
+  updateSubtask: (ref: TaskRef, subtaskId: string, patch: Partial<Omit<Subtask, 'id'>>) => void;
   /** Create a personal/quick task; returns its id. */
   addTask: (task: Partial<Omit<PersonalTask, 'id' | 'createdAt' | 'updatedAt'>> & { title: string }) => string;
   updateTask: (id: string, patch: Partial<Omit<PersonalTask, 'id' | 'createdAt'>>) => void;
@@ -255,6 +258,13 @@ export const useStore = create<AppState>()(
         const { kind, id } = taskRef.parse(ref);
         if (kind === 'assignment') get().updateMeta(id, patch);
         else get().updateTask(id, patch);
+      },
+      updateSubtask: (ref, subtaskId, patch) => {
+        const { kind, id } = taskRef.parse(ref);
+        const s = get();
+        const subtasks = (kind === 'assignment' ? s.meta[id]?.subtasks : s.tasks[id]?.subtasks) ?? [];
+        if (!subtasks.some((x) => x.id === subtaskId)) return;
+        s.updateTaskFields(ref, { subtasks: subtasks.map((x) => (x.id === subtaskId ? { ...x, ...patch } : x)) });
       },
       addTask: (task) => {
         const id = newId();

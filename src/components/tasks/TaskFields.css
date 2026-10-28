@@ -1,0 +1,138 @@
+/* Field editors shared by the details drawer and the quick-add form (TaskFields.tsx). */
+.td-field { display: flex; flex-direction: column; gap: 6px; }
+.td-label { font-size: 12px; font-weight: 500; letter-spacing: .3px; color: var(--text-2); }
+.td-static { margin: 0; color: var(--text); }
+.td-static.overdue { color: var(--danger); }
+.td-sub { color: var(--text-3); }
+
+.td-inline { display: flex; align-items: center; gap: 6px; }
+.td-wrap { flex-wrap: wrap; }
+.td-input {
+  height: 36px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text);
+}
+.td-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 1px var(--primary); }
+select.td-input { flex: 1; min-width: 140px; }
+.td-notes { height: auto; min-height: 76px; padding: 8px 10px; resize: vertical; line-height: 1.45; }
+.td-est-input { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 13px; }
+.td-est-input .td-input { width: 76px; }
+
+.td-chip {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.td-chip:hover { background: var(--surface-3); }
+.td-chip.active { border-color: transparent; background: var(--primary-container); color: var(--on-primary-container); }
+
+.td-seg {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.td-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.td-seg button:first-child { border-left: 0; }
+.td-seg button:hover { background: var(--surface-3); }
+.td-seg button.active { background: var(--primary-container); color: var(--on-primary-container); }
+.td-seg button:focus-visible { outline-offset: -2px; }
+.td-seg button.high:not(.active) { color: var(--danger); }
+.td-seg button.medium:not(.active) { color: var(--warning); }
+
+.td-subtasks { margin: 0; padding: 0; list-style: none; }
+.td-subtasks li { display: flex; align-items: center; gap: 4px; min-height: 40px; padding-left: 4px; border-radius: var(--radius-m); }
+.td-subtasks li:hover { background: var(--surface-3); }
+.td-sub-box { flex: none; width: 18px; height: 18px; margin: 0 6px 0 0; accent-color: var(--task-color, var(--primary)); cursor: pointer; }
+.td-sub-title {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text);
+  text-overflow: ellipsis;
+}
+.td-sub-title:hover { border-color: var(--border-soft); }
+.td-sub-title:focus { border-color: var(--primary); outline: none; background: var(--surface); }
+.td-subtasks li.done .td-sub-title { color: var(--text-3); text-decoration: line-through; }
+
+/* Day chip: label text on top, the native date input invisible over it (opens its picker). */
+.td-sub-day-wrap { display: inline-flex; align-items: center; flex: none; }
+.td-sub-day {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.td-sub-day:hover { background: var(--surface-2); color: var(--text-2); }
+.td-sub-day.set { border-style: solid; border-color: transparent; background: var(--primary-container); color: var(--on-primary-container); }
+.td-sub-day.missed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.td-sub-day input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.td-sub-day:focus-within { outline: 2px solid var(--primary); outline-offset: 1px; }
+.td-sub-day-clear { width: 28px; height: 28px; }
+.td-daily { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-grow { flex: 1; }
+.td-sub-actions { display: flex; flex: none; }
+.td-sub-actions .icon-btn:disabled { opacity: .3; cursor: default; }
+@media (hover: hover) {
+  .td-sub-actions, .td-sub-day-clear { opacity: 0; }
+  .td-subtasks li:hover :is(.td-sub-actions, .td-sub-day-clear),
+  .td-subtasks li:focus-within :is(.td-sub-actions, .td-sub-day-clear) { opacity: 1; }
+}
+@media (max-width: 599px) {
+  .td-seg button { font-size: 12px; }
+  .td-seg button .material-symbols-outlined { display: none; }
+}
+.td-sub-add { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 4px; color: var(--text-3); }
+.td-sub-add input { flex: 1; min-width: 0; height: 100%; border: 0; border-bottom: 1px solid transparent; background: transparent; }
+.td-sub-add input:focus { border-bottom-color: var(--primary); outline: none; }
+

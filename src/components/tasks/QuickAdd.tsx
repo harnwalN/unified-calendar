@@ -1,43 +1,55 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { useStore } from '../../store';
 import { useClasses } from '../../store/tasks';
-import { parseQuickAdd } from '../../lib/quickAdd';
+import { buildDraft, parseQuickAdd, type AddTarget, type TaskDraft } from '../../lib/quickAdd';
 import Icon from '../Icon';
 import { doDateLabel, formatEstimate } from './format';
+import { DoDateField, DueInput, EstimateField, Field, ListField, NotesField, PriorityField, SubtaskEditor } from './TaskFields';
 import { PRIORITY_LABEL } from './TaskRow';
 import './QuickAdd.css';
 
 export const QUICK_ADD_ID = 'quick-add-input';
-
-/** Where a new task goes unless the text says otherwise (#class or a leading "q"). */
-type Target = 'personal' | 'quick' | `class:${string}`;
+const FORM_ID = 'quick-add-form';
 
 export default function QuickAdd() {
   const [text, setText] = useState('');
-  const [target, setTarget] = useState<Target>('personal');
+  const [target, setTarget] = useState<AddTarget>('personal');
+  // "More options": the same fields as the details drawer. Typed shortcuts pre-fill them;
+  // anything changed in the form wins over the text.
+  const [expanded, setExpanded] = useState(false);
+  const [edits, setEdits] = useState<Partial<TaskDraft>>({});
+  const inputRef = useRef<HTMLInputElement>(null);
   const classes = useClasses();
   const addTask = useStore((s) => s.addTask);
   const parsed = useMemo(() => (text.trim() ? parseQuickAdd(text, new Date(), classes) : null), [text, classes]);
-  // Text wins over the picker: "#CSE110" picks a class, a leading "q"/short estimate makes it quick.
-  const pickedClassId = target.startsWith('class:') ? target.slice(6) : undefined;
-  const classId = parsed?.classId ?? pickedClassId;
-  const list = parsed?.list === 'quick' || (!parsed?.classId && target === 'quick') ? 'quick' : 'personal';
-  const cls = classId ? classes.find((c) => c.id === classId) : undefined;
+  const draft = buildDraft(parsed, target, edits);
+  const title = parsed?.title ?? '';
+  const cls = draft.classId ? classes.find((c) => c.id === draft.classId) : undefined;
+  const edit = (p: Partial<TaskDraft>) => setEdits((e) => ({ ...e, ...p }));
 
   const submit = () => {
-    if (!parsed?.title) return;
-    const { title, due, doDate, priority, estimateMin } = parsed;
-    addTask({ title, due, doDate, classId: list === 'quick' ? undefined : classId, priority, estimateMin, list });
+    if (!title) {
+      inputRef.current?.focus();
+      return;
+    }
+    addTask({ title, ...draft });
     setText('');
+    setEdits({});
+    setExpanded(false);
+  };
+  const collapse = () => {
+    setExpanded(false);
+    inputRef.current?.focus();
   };
 
   const now = new Date();
   return (
-    <div className="quick-add">
+    <div className={`quick-add${expanded ? ' expanded' : ''}`} style={{ '--task-color': cls?.color ?? 'var(--primary)' } as CSSProperties}>
       <div className="quick-add-field">
         <Icon name="add_task" className="quick-add-icon" />
         <input
+          ref={inputRef}
           id={QUICK_ADD_ID}
           type="text"
           value={text}
@@ -47,81 +59,168 @@ export default function QuickAdd() {
               e.preventDefault();
               submit();
             } else if (e.key === 'Escape') {
-              setText('');
-              e.currentTarget.blur();
+              if (expanded) setExpanded(false);
+              else {
+                setText('');
+                setEdits({});
+                e.currentTarget.blur();
+              }
             }
           }}
-          placeholder="Add a task… e.g. PA 3 fri 11:59pm #CSE110 !high ~2h @wed"
-          aria-label="Add a task"
+          placeholder={expanded ? 'Task title (shortcuts like fri 5pm or #CSE110 still work)' : 'Add a task… e.g. PA 3 fri 11:59pm #CSE110 !high ~2h @wed'}
+          aria-label={expanded ? 'Task title' : 'Add a task'}
           aria-describedby="quick-add-help"
           autoComplete="off"
           enterKeyHint="done"
         />
-        <label className="quick-add-target" title="Where the task goes">
-          <span className="sr-only">Add to</span>
-          <select value={target} onChange={(e) => setTarget(e.target.value as Target)}>
-            <option value="personal">Personal</option>
-            <option value="quick">Quick items</option>
-            {classes.length > 0 && (
-              <optgroup label="Classes">
-                {classes.map((c) => (
-                  <option key={c.id} value={`class:${c.id}`}>
-                    {c.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-          <Icon name="arrow_drop_down" />
-        </label>
-        {text && (
-          <button className="icon-btn small" onClick={submit} disabled={!parsed?.title} aria-label="Add task" title="Add (Enter)">
+        {!expanded && (
+          <label className="quick-add-target" title="Where the task goes">
+            <span className="sr-only">Add to</span>
+            <select
+              value={target}
+              onChange={(e) => {
+                setTarget(e.target.value as AddTarget);
+                // The picker is the latest choice: drop a list/class picked in the form.
+                setEdits(({ list: _l, classId: _c, ...rest }) => rest);
+              }}
+            >
+              <option value="personal">Personal</option>
+              <option value="quick">Quick items</option>
+              {classes.length > 0 && (
+                <optgroup label="Classes">
+                  {classes.map((c) => (
+                    <option key={c.id} value={`class:${c.id}`}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <Icon name="arrow_drop_down" />
+          </label>
+        )}
+        <button
+          className={`icon-btn small quick-add-more${expanded ? ' on' : ''}`}
+          onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-controls={FORM_ID}
+          aria-label="More options"
+          title={expanded ? 'Fewer options' : 'More options: dates, class, subtasks…'}
+        >
+          <Icon name="tune" />
+        </button>
+        {(text || expanded) && (
+          <button className="icon-btn small quick-add-go" onClick={submit} disabled={!title} aria-label="Add task" title="Add (Enter)">
             <Icon name="arrow_upward" />
           </button>
         )}
       </div>
       <p id="quick-add-help" className="sr-only">
         Type a date or weekday, a time, #class, !high, ~30m estimate, @day to plan, or start with q for a quick item. Enter adds.
+        More options opens a form with every field.
       </p>
-      {parsed && (
-        <ul className="quick-add-preview" aria-label="Parsed task" aria-live="polite">
-          <li className="qa-chip qa-title">{parsed.title || 'Add a title'}</li>
-          {parsed.due && (
-            <li className="qa-chip">
-              <Icon name="schedule" size={16} />
-              Due {format(new Date(parsed.due), 'EEE, MMM d · h:mm a')}
-            </li>
-          )}
-          {cls && (
-            <li className="qa-chip" style={{ '--task-color': cls.color } as CSSProperties}>
-              <span className="task-dot" aria-hidden="true" />
-              {cls.name}
-            </li>
-          )}
-          {parsed.priority !== 'none' && (
-            <li className={`qa-chip qa-flag ${parsed.priority}`}>
-              <Icon name="flag" size={16} />
-              {PRIORITY_LABEL[parsed.priority]}
-            </li>
-          )}
-          {parsed.estimateMin !== undefined && (
-            <li className="qa-chip">
-              <Icon name="timer" size={16} />~{formatEstimate(parsed.estimateMin)}
-            </li>
-          )}
-          {parsed.doDate && (
-            <li className="qa-chip">
-              <Icon name="event_available" size={16} />
-              Plan: {doDateLabel(parsed.doDate, now)}
-            </li>
-          )}
-          {list === 'quick' && (
-            <li className="qa-chip">
-              <Icon name="bolt" size={16} />
-              Quick item
-            </li>
-          )}
-        </ul>
+
+      {expanded ? (
+        <div
+          id={FORM_ID}
+          className="qa-form"
+          role="group"
+          aria-label="New task details"
+          onKeyDown={(e) => {
+            if (e.defaultPrevented) return;
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              collapse();
+            }
+          }}
+        >
+          <div className="qa-grid">
+            <ListField
+              id="qa-class"
+              list={draft.list}
+              classId={draft.classId}
+              onChange={(p) => {
+                edit(p);
+                setTarget(p.list === 'quick' ? 'quick' : p.classId ? `class:${p.classId}` : 'personal');
+              }}
+            />
+            <Field label="Due" htmlFor="qa-due">
+              <DueInput id="qa-due" value={draft.due} onChange={(due) => edit({ due })} />
+            </Field>
+            <DoDateField id="qa-do" value={draft.doDate} onChange={(doDate) => edit({ doDate })} />
+            <PriorityField value={draft.priority} onChange={(priority) => edit({ priority })} />
+            <EstimateField id="qa-est" value={draft.estimateMin} onChange={(estimateMin) => edit({ estimateMin })} />
+          </div>
+          <SubtaskEditor subtasks={draft.subtasks} due={draft.due} onChange={(subtasks) => edit({ subtasks })} />
+          <NotesField id="qa-notes" value={draft.notes} onChange={(notes) => edit({ notes })} />
+          <div className="qa-actions">
+            <span className="qa-hint">{title ? 'Ctrl/⌘ + Enter adds' : 'Type a title above to add it'}</span>
+            <button
+              className="text-btn"
+              onClick={() => {
+                setText('');
+                setEdits({});
+                collapse();
+              }}
+            >
+              Discard
+            </button>
+            <button className="filled-btn" onClick={submit} disabled={!title}>
+              <Icon name="add_task" size={18} />
+              Add task
+            </button>
+          </div>
+        </div>
+      ) : (
+        (parsed || Object.keys(edits).length > 0) && (
+          <ul className="quick-add-preview" aria-label="Parsed task" aria-live="polite">
+            <li className="qa-chip qa-title">{title || 'Add a title'}</li>
+            {draft.due && (
+              <li className="qa-chip">
+                <Icon name="schedule" size={16} />
+                Due {format(new Date(draft.due), 'EEE, MMM d · h:mm a')}
+              </li>
+            )}
+            {cls && (
+              <li className="qa-chip">
+                <span className="task-dot" aria-hidden="true" />
+                {cls.name}
+              </li>
+            )}
+            {draft.priority !== 'none' && (
+              <li className={`qa-chip qa-flag ${draft.priority}`}>
+                <Icon name="flag" size={16} />
+                {PRIORITY_LABEL[draft.priority]}
+              </li>
+            )}
+            {draft.estimateMin !== undefined && (
+              <li className="qa-chip">
+                <Icon name="timer" size={16} />~{formatEstimate(draft.estimateMin)}
+              </li>
+            )}
+            {draft.doDate && (
+              <li className="qa-chip">
+                <Icon name="event_available" size={16} />
+                Plan: {doDateLabel(draft.doDate, now)}
+              </li>
+            )}
+            {draft.subtasks.length > 0 && (
+              <li className="qa-chip">
+                <Icon name="checklist" size={16} />
+                {draft.subtasks.length} subtask{draft.subtasks.length === 1 ? '' : 's'}
+              </li>
+            )}
+            {draft.list === 'quick' && (
+              <li className="qa-chip">
+                <Icon name="bolt" size={16} />
+                Quick item
+              </li>
+            )}
+          </ul>
+        )
       )}
     </div>
   );

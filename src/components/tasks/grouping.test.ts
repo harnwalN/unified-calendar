@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { dayLoads, fitsGap, freeMinutes, groupTasks, isTodayTask } from './grouping';
+import { dayLoads, fitsGap, freeMinutes, groupTasks, isTodayTask, subtasksOnDay } from './grouping';
+import { perDaySubtasks } from './subtasks';
 import { doDateLabel, dueLabel, formatDuration, openLinkLabel, relativeDue } from './format';
-import type { CalEvent, ClassInfo, TaskView } from '../../types';
+import type { CalEvent, ClassInfo, Subtask, TaskView } from '../../types';
 
 // Monday, Oct 26 2026, 2:00 PM local. Week (Sun start) = Oct 25 – Oct 31.
 const NOW = new Date(2026, 9, 26, 14, 0);
@@ -126,6 +127,52 @@ describe('groupTasks', () => {
     const sun = task({ classId: 'cse', due: at(25, 12) });
     expect(groupTasks([sun], CLASSES, NOW, 0).classes[0].weekTotal).toBe(1);
     expect(groupTasks([sun], CLASSES, NOW, 1).classes[0].weekTotal).toBe(0);
+  });
+});
+
+const sub = (id: string, doDate?: string, done = false): Subtask => ({ id, title: id, done, doDate });
+
+describe('dated subtasks', () => {
+  it('lists open subtasks planned for today or earlier as their own Today items', () => {
+    const test = task({ classId: 'cse', due: at(30), title: 'Midterm', subtasks: [sub('mon', '2026-10-26'), sub('sun', '2026-10-25'), sub('tue', '2026-10-27'), sub('nodate'), sub('did', '2026-10-26', true)] });
+    const s = groupTasks([test], CLASSES, NOW);
+    expect(s.today).toEqual([]);
+    expect(s.todaySubtasks.map((i) => i.sub.id)).toEqual(['sun', 'mon']);
+    expect(s.todaySubtasks[0].parent.ref).toBe(test.ref);
+    // The parent stays in its class section (with all its subtasks nested).
+    expect(s.classes[0].open.map((t) => t.title)).toEqual(['Midterm']);
+  });
+
+  it('skips subtasks of done parents, hidden classes, and parents already in Today', () => {
+    const done = task({ classId: 'cse', due: at(30), status: 'done', subtasks: [sub('a', '2026-10-26')] });
+    const hidden = task({ classId: 'hid', due: at(30), subtasks: [sub('b', '2026-10-26')] });
+    const inToday = task({ classId: 'cse', due: at(26), subtasks: [sub('c', '2026-10-26')] });
+    const s = groupTasks([done, hidden, inToday], CLASSES, NOW);
+    expect(s.todaySubtasks).toEqual([]);
+    expect(s.today).toEqual([inToday]);
+  });
+
+  it('orders by day, then the parent deadline, keeping subtask order within a parent', () => {
+    const later = task({ due: at(31), title: 'later', subtasks: [sub('l1', '2026-10-26')] });
+    const sooner = task({ due: at(29), title: 'sooner', subtasks: [sub('s2', '2026-10-26'), sub('s1', '2026-10-26')] });
+    const old = task({ due: at(31), title: 'old', subtasks: [sub('o1', '2026-10-24')] });
+    expect(groupTasks([later, sooner, old], CLASSES, NOW).todaySubtasks.map((i) => i.sub.id)).toEqual(['o1', 's2', 's1', 'l1']);
+  });
+
+  it('subtasksOnDay picks exactly that day, done or not', () => {
+    const t = task({ due: at(30), subtasks: [sub('a', '2026-10-27'), sub('b', '2026-10-27', true), sub('c', '2026-10-28')] });
+    expect(subtasksOnDay([t], '2026-10-27').map((i) => i.sub.id)).toEqual(['a', 'b']);
+    expect(subtasksOnDay([t], '2026-10-29')).toEqual([]);
+  });
+
+  it('perDaySubtasks fills the days before the deadline', () => {
+    // Test Friday Oct 30: Mon–Thu, skipping Tuesday which already has one.
+    const added = perDaySubtasks([sub('x', '2026-10-27')], 'Study', at(30, 9, 0), NOW);
+    expect(added.map((s) => s.doDate)).toEqual(['2026-10-26', '2026-10-28', '2026-10-29']);
+    expect(added.every((s) => s.title === 'Study' && !s.done)).toBe(true);
+    expect(new Set(added.map((s) => s.id)).size).toBe(3);
+    expect(perDaySubtasks([], 'Study', at(26), NOW)).toEqual([]);
+    expect(perDaySubtasks([], 'Study', at(20, 23, 59, 11), NOW)).toHaveLength(14);
   });
 });
 
