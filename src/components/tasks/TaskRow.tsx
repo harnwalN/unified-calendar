@@ -7,6 +7,7 @@ import Icon from '../Icon';
 import { doDateLabel, dueLabel, formatDuration, formatEstimate } from './format';
 import { deleteTaskWithUndo } from './TaskDetail';
 import ScheduleForm from './ScheduleForm';
+import { progressVars } from './progress';
 import { format } from 'date-fns';
 import './TaskRow.css';
 
@@ -55,7 +56,7 @@ export default function TaskRow({ task, now, showClass = true, highlight }: Prop
   return (
     <li
       className={`task-row${done ? ' done' : ''}${task.status === 'doing' ? ' doing' : ''}${highlight ? ' highlight' : ''}${running ? ' running' : ''}`}
-      style={{ '--task-color': color } as CSSProperties}
+      style={{ '--task-color': color, ...progressVars(task, live) } as CSSProperties}
       onClick={open}
     >
       <StatusCheck task={task} />
