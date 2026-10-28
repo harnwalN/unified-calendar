@@ -164,6 +164,22 @@ describe('parseIcs', () => {
     expect(daily).toHaveLength(122); // Sep 1 .. Dec 31
   });
 
+  it('keeps distinct events that reuse a UID and drops exact duplicates', () => {
+    const vevent = (start: string) => ['BEGIN:VEVENT', 'UID:dup', 'SUMMARY:Section', `DTSTART:${start}`, 'DURATION:PT1H', 'END:VEVENT'];
+    const { events: dups } = parseIcs(
+      ics(
+        'BEGIN:VCALENDAR',
+        ...vevent('20261102T170000Z'),
+        ...vevent('20261104T170000Z'),
+        ...vevent('20261104T170000Z'),
+        'END:VCALENDAR',
+      ),
+      opts,
+    );
+    expect(dups.map((e) => e.start)).toEqual(['2026-11-02T17:00:00.000Z', '2026-11-04T17:00:00.000Z']);
+    expect(new Set(dups.map((e) => e.id)).size).toBe(2);
+  });
+
   it('rejects non-calendar text', () => {
     expect(() => parseIcs('<html></html>', opts)).toThrow(/not valid iCalendar/);
   });

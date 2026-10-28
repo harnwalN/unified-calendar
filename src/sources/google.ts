@@ -14,6 +14,8 @@ export const DRIVE_APPDATA_SCOPE = 'https://www.googleapis.com/auth/drive.appdat
 const GRANTED_SCOPES_KEY = 'unified-calendar:granted-scopes';
 const API = 'https://www.googleapis.com/calendar/v3';
 const TOKEN_MIN_LIFETIME_MS = 60_000;
+/** Backoff before each retry of a rate-limited / 5xx Calendar API call. */
+const RETRY_DELAYS_MS = [1000, 3000];
 
 // ---- minimal Google Identity Services typings ----
 interface CodeResponse {
@@ -224,7 +226,10 @@ async function refreshAccessToken(account: GoogleAccount): Promise<string> {
   const { status, data } = await workerPost<{ access_token: string; expires_in: number }>('/google/refresh', {
     refresh_token: account.refreshToken,
   });
-  const { updateAccount } = useStore.getState();
+  const { updateAccount, accounts } = useStore.getState();
+  // Reconnected (new refresh token) while this request was in flight: the old token's fate doesn't matter.
+  const current = accounts.find((a) => a.id === account.id);
+  if (current && current.refreshToken !== account.refreshToken && current.accessToken) return current.accessToken;
   if (status === 401) {
     updateAccount(account.id, { needsReconnect: true, accessToken: undefined, accessTokenExpiry: undefined });
     throw new Error(`Google access for ${account.email || 'this account'} expired. Reconnect to keep syncing.`);
@@ -238,29 +243,52 @@ async function refreshAccessToken(account: GoogleAccount): Promise<string> {
   return data.access_token;
 }
 
-class GoogleApiError extends Error {
+export class GoogleApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** First `error.errors[].reason`, e.g. "notFound", "rateLimitExceeded". */
+    readonly reason?: string,
   ) {
     super(message);
   }
+
+  /** Quota/rate limits (Google uses 403 as well as 429 for these) and server errors are worth retrying. */
+  get retryable(): boolean {
+    if (this.status === 429 || this.status >= 500) return true;
+    return this.status === 403 && /rate|quota/i.test(this.reason ?? '');
+  }
 }
 
-/** GET a Calendar API URL, forcing one token refresh + retry on 401. */
+/** GET a Calendar API URL, forcing one token refresh + retry on 401 and backing off on rate limits. */
 async function apiGet<T>(accountId: string, url: string): Promise<T> {
+  let refreshed = false;
   for (let attempt = 0; ; attempt++) {
-    const token = await getAccessToken(accountId, attempt > 0);
+    const token = await getAccessToken(accountId, refreshed);
     let res: Response;
     try {
       res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     } catch {
       throw new Error("Couldn't reach Google Calendar. Check your internet connection.");
     }
-    if (res.status === 401 && attempt === 0) continue;
+    if (res.status === 401 && !refreshed) {
+      refreshed = true;
+      continue;
+    }
     if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
-      throw new GoogleApiError(res.status, body?.error?.message || `Google Calendar error ${res.status}`);
+      const body = (await res.json().catch(() => null)) as {
+        error?: { message?: string; errors?: { reason?: string }[] };
+      } | null;
+      const err = new GoogleApiError(
+        res.status,
+        body?.error?.message || `Google Calendar error ${res.status}`,
+        body?.error?.errors?.[0]?.reason,
+      );
+      if (err.retryable && attempt < RETRY_DELAYS_MS.length) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt] * (1 + Math.random() / 2)));
+        continue;
+      }
+      throw err;
     }
     return (await res.json()) as T;
   }
@@ -282,6 +310,8 @@ export interface GEventTime {
 export interface GEvent {
   id: string;
   status?: string;
+  /** "default", "workingLocation", "outOfOffice", "focusTime", "birthday", "fromGmail". */
+  eventType?: string;
   summary?: string;
   description?: string;
   location?: string;
@@ -314,7 +344,8 @@ function parseGoogleTime(t: GEventTime | undefined): Date | null {
 }
 
 export function mapGoogleEvent(ev: GEvent, calendarId: string, googleCalId: string): CalEvent | null {
-  if (ev.status === 'cancelled') return null;
+  // Working-location markers ("Home", "Office") are status chips in Google Calendar, not events.
+  if (ev.status === 'cancelled' || ev.eventType === 'workingLocation') return null;
   const start = parseGoogleTime(ev.start);
   if (!start) return null;
   const allDay = !ev.start?.dateTime;
@@ -364,7 +395,7 @@ export async function fetchGoogleSource(
         maxResults: '2500',
         timeMin: rangeStart.toISOString(),
         timeMax: rangeEnd.toISOString(),
-        fields: 'nextPageToken,items(id,status,summary,description,location,htmlLink,start,end)',
+        fields: 'nextPageToken,items(id,status,eventType,summary,description,location,htmlLink,start,end)',
       });
       try {
         const items = await listAll<GEvent>(
@@ -373,8 +404,9 @@ export async function fetchGoogleSource(
         );
         return items.flatMap((ev) => mapGoogleEvent(ev, calendars[i].id, c.id) ?? []);
       } catch (err) {
-        // One inaccessible calendar (e.g. unshared since listing) shouldn't fail the account.
-        if (err instanceof GoogleApiError && (err.status === 403 || err.status === 404)) return [];
+        // One inaccessible calendar (e.g. unshared since listing) shouldn't fail the account. Rate limits
+        // must fail the sync instead, or the calendar's cached events would be replaced with nothing.
+        if (err instanceof GoogleApiError && (err.status === 404 || (err.status === 403 && !err.retryable))) return [];
         throw err;
       }
     }),
