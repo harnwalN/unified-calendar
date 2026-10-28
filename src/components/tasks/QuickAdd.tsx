@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { useStore } from '../../store';
 import { useClasses } from '../../store/tasks';
@@ -11,6 +11,14 @@ import './QuickAdd.css';
 
 export const QUICK_ADD_ID = 'quick-add-input';
 const FORM_ID = 'quick-add-form';
+const OPEN_EVENT = 'quick-add:open';
+
+/** Open the full add form in the main tab, pre-filled with typed text (used by the mini window). */
+export function openQuickAdd(text = '') {
+  useStore.getState().setTimePageOpen(false);
+  window.focus();
+  window.dispatchEvent(new CustomEvent<string>(OPEN_EVENT, { detail: text }));
+}
 
 export default function QuickAdd() {
   const [text, setText] = useState('');
@@ -27,6 +35,18 @@ export default function QuickAdd() {
   const title = parsed?.title ?? '';
   const cls = draft.classId ? classes.find((c) => c.id === draft.classId) : undefined;
   const edit = (p: Partial<TaskDraft>) => setEdits((e) => ({ ...e, ...p }));
+
+  useEffect(() => {
+    const open = (e: Event) => {
+      setText((e as CustomEvent<string>).detail);
+      setEdits({});
+      setExpanded(true);
+      inputRef.current?.scrollIntoView({ block: 'center' });
+      inputRef.current?.focus();
+    };
+    window.addEventListener(OPEN_EVENT, open);
+    return () => window.removeEventListener(OPEN_EVENT, open);
+  }, []);
 
   const submit = () => {
     if (!title) {

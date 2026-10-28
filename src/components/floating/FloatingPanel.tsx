@@ -13,7 +13,10 @@ import { startTimer, stopTimer, toggleTimer, useTaskLabeler } from '../../featur
 import { formatClock } from '../../features/timeStats';
 import type { TaskView } from '../../types';
 import Icon from '../Icon';
-import { dueLabel, formatDuration } from '../tasks/format';
+import { doDateLabel, dueLabel, formatDuration } from '../tasks/format';
+import type { SubtaskItem } from '../tasks/grouping';
+import { progressVars } from '../tasks/progress';
+import { openQuickAdd } from '../tasks/QuickAdd';
 import { useHomeSections } from '../tasks/useHomeData';
 import { rankTimerChoices, useRecentTimedRefs } from '../time/StartTimerMenu';
 import './FloatingPanel.css';
@@ -122,6 +125,18 @@ function MiniAdd() {
         aria-label="Add a task"
         title="Same shortcuts as the app: fri 5pm, #CSE110, !high, ~30m"
       />
+      <button
+        type="button"
+        className="mini-add-more"
+        onClick={() => {
+          openQuickAdd(text);
+          setText('');
+        }}
+        aria-label="More options in the app"
+        title="More options (opens the full form in the app)"
+      >
+        <Icon name="tune" size={18} />
+      </button>
       {text.trim() && (
         <button type="submit" className="mini-add-go" aria-label="Add task">
           <Icon name="arrow_upward" size={18} />
@@ -215,34 +230,47 @@ function TodayList({ now }: { now: Date }) {
   const { sections } = useHomeSections();
   const timer = useStore((s) => s.runningTimer);
   const label = useTaskLabeler();
-  const today = sections.today;
+  const { today, todaySubtasks } = sections;
+  const total = today.length + todaySubtasks.length;
   const shown = today.slice(0, MAX_TASKS);
+  const shownSubs = todaySubtasks.slice(0, MAX_TASKS - shown.length);
+  const liveMs = timer ? Math.max(0, now.getTime() - Date.parse(timer.start)) : 0;
 
   return (
     <section className="mini-today" aria-label="Today's tasks">
       <h2>
-        Today <span className="mini-count">{today.length}</span>
+        Today <span className="mini-count">{total}</span>
       </h2>
       <MiniAdd />
-      {shown.length === 0 ? (
+      {total === 0 ? (
         <p className="mini-none">Nothing due or planned for today.</p>
       ) : (
         <ul>
-          {shown.map((t) => (
-            <MiniRow key={t.ref} task={t} now={now} color={label(t.ref).color} timing={timer?.taskRef === t.ref} />
+          {shown.map((t) => {
+            const timing = timer?.taskRef === t.ref;
+            return <MiniRow key={t.ref} task={t} now={now} color={label(t.ref).color} timing={timing} liveMs={timing ? liveMs : 0} />;
+          })}
+          {shownSubs.map((item) => (
+            <MiniSubRow
+              key={`${item.parent.ref}/${item.sub.id}`}
+              item={item}
+              now={now}
+              color={label(item.parent.ref).color}
+              timing={timer?.taskRef === item.parent.ref}
+            />
           ))}
         </ul>
       )}
-      {today.length > shown.length && <p className="mini-none">+{today.length - shown.length} more in the app</p>}
+      {total > shown.length + shownSubs.length && <p className="mini-none">+{total - shown.length - shownSubs.length} more in the app</p>}
     </section>
   );
 }
 
-function MiniRow({ task: t, now, color, timing }: { task: TaskView; now: Date; color: string; timing: boolean }) {
+function MiniRow({ task: t, now, color, timing, liveMs }: { task: TaskView; now: Date; color: string; timing: boolean; liveMs: number }) {
   const due = t.due ? dueLabel(t.due, now) : null;
   const done = t.status === 'done';
   return (
-    <li className={`mini-row${timing ? ' timing' : ''}`} style={{ '--task-color': color } as CSSProperties}>
+    <li className={`mini-row${timing ? ' timing' : ''}`} style={{ '--task-color': color, ...progressVars(t, liveMs) } as CSSProperties}>
       <button
         className="mini-check"
         role="checkbox"
@@ -260,6 +288,41 @@ function MiniRow({ task: t, now, color, timing }: { task: TaskView; now: Date; c
         className="icon-btn small mini-play"
         onClick={() => toggleTimer(t.ref)}
         aria-label={timing ? `Stop timing ${t.title}` : `Start timer for ${t.title}`}
+        title={timing ? 'Stop timer' : 'Start timer'}
+      >
+        <Icon name={timing ? 'stop' : 'play_arrow'} />
+      </button>
+    </li>
+  );
+}
+
+/** A dated subtask planned for today (or missed earlier); checking it checks the subtask, the timer tracks the parent. */
+function MiniSubRow({ item: { parent, sub }, now, color, timing }: { item: SubtaskItem; now: Date; color: string; timing: boolean }) {
+  const missed = sub.doDate < dayKey(now);
+  return (
+    <li className={`mini-row mini-sub-row${timing ? ' timing' : ''}`} style={{ '--task-color': color } as CSSProperties}>
+      <button
+        className="mini-check"
+        role="checkbox"
+        aria-checked={sub.done}
+        aria-label={`Mark "${sub.title}" ${sub.done ? 'not done' : 'done'}`}
+        onClick={() => useStore.getState().updateSubtask(parent.ref, sub.id, { done: !sub.done })}
+      >
+        <Icon name={sub.done ? 'check_circle' : 'radio_button_unchecked'} />
+      </button>
+      <span className="mini-row-text">
+        <span className="mini-row-title">{sub.title}</span>
+        <span className="mini-row-due" title={`Subtask of ${parent.title}`}>
+          <span aria-hidden="true">↳ </span>
+          <span className="sr-only">Subtask of </span>
+          {parent.title}
+          {missed && <span className="overdue"> · planned {doDateLabel(sub.doDate, now)}</span>}
+        </span>
+      </span>
+      <button
+        className="icon-btn small mini-play"
+        onClick={() => toggleTimer(parent.ref)}
+        aria-label={timing ? `Stop timing ${parent.title}` : `Start timer for ${parent.title}`}
         title={timing ? 'Stop timer' : 'Start timer'}
       >
         <Icon name={timing ? 'stop' : 'play_arrow'} />
