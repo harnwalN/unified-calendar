@@ -23,8 +23,10 @@
 }
 .quick-add-field input:focus-visible { outline: none; }
 .quick-add-field input::placeholder { color: var(--text-3); text-overflow: ellipsis; }
-.quick-add-field .icon-btn { background: var(--primary); color: var(--on-primary); }
-.quick-add-field .icon-btn:disabled { background: var(--surface-3); color: var(--text-3); cursor: default; }
+.quick-add-field .quick-add-go { background: var(--primary); color: var(--on-primary); }
+.quick-add-field .quick-add-go:disabled { background: var(--surface-3); color: var(--text-3); cursor: default; }
+.quick-add-more { flex: none; color: var(--text-2); }
+.quick-add-more.on { background: var(--primary-container); color: var(--on-primary-container); }
 
 .quick-add-preview {
   display: flex;
@@ -88,3 +90,31 @@
 }
 .quick-add-target select:focus-visible { outline: 2px solid var(--primary); }
 .quick-add-target .material-symbols-outlined { position: absolute; right: 6px; pointer-events: none; }
+
+/* ---- "More options": the drawer's fields, for a new task ---- */
+.qa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  animation: qa-open .16s cubic-bezier(.2, 0, 0, 1);
+}
+@keyframes qa-open { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.qa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px 24px; align-items: start; }
+.qa-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.qa-hint { flex: 1; min-width: 0; font-size: 12px; color: var(--text-3); }
+.qa-actions .filled-btn:disabled { opacity: .5; cursor: default; box-shadow: none; }
+.app.has-scene .qa-form {
+  background: var(--glass);
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 2px 8px rgba(0, 0, 0, .05);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+@media (max-width: 599px) {
+  .qa-form { padding: 12px 14px; }
+  .qa-hint { display: none; }
+}

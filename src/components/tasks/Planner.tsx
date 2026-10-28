@@ -9,6 +9,7 @@ import Icon from '../Icon';
 import { useNow } from '../hooks';
 import DayTrack, { HourAxis, openPlannerEvent, TrackedStrip } from './DayTrack';
 import { formatDuration } from './format';
+import type { SubtaskItem } from './grouping';
 import { hourRange, pct } from './timeline';
 import { usePlannerData, type DayData } from './usePlannerData';
 import './Planner.css';
@@ -143,6 +144,7 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
     const parts = [
       data.spans.length ? `${data.spans.length} event${data.spans.length === 1 ? '' : 's'}` : 'No events',
       data.due.length ? `${data.due.length} due` : '',
+      data.subtasks.length ? `${data.subtasks.length} subtask${data.subtasks.length === 1 ? '' : 's'} planned` : '',
       classMs(data) >= 60_000 ? `${formatDuration(classMs(data))} in class` : '',
       tracked >= 60_000 ? `${formatDuration(tracked)} tracked` : '',
     ].filter(Boolean);
@@ -175,10 +177,35 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
           ))}
         </div>
       )}
+      {data.subtasks.length > 0 && <PlannedSubtasks items={data.subtasks} />}
       <DayTrack data={data} range={range} now={now} />
       {data.tracked.length > 0 && <TrackedStrip data={data} at={at} />}
       <HourAxis day={data.day} range={range} />
     </div>
+  );
+}
+
+/** Subtasks planned for the day, as chips that open their parent task. */
+function PlannedSubtasks({ items }: { items: SubtaskItem[] }) {
+  return (
+    <ul className="pl-subs" aria-label="Subtasks planned for this day">
+      {items.map(({ parent, sub }) => {
+        const done = sub.done || parent.status === 'done';
+        return (
+          <li key={`${parent.ref}/${sub.id}`}>
+            <button
+              className={done ? 'done' : undefined}
+              onClick={() => useStore.getState().selectTask(parent.ref)}
+              title={`${sub.title} (subtask of ${parent.title})${done ? ' · done' : ''}`}
+            >
+              <Icon name={done ? 'check_circle' : 'subdirectory_arrow_right'} size={14} />
+              <span className="pl-sub-title">{sub.title}</span>
+              <span className="pl-sub-parent">{parent.title}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

@@ -152,3 +152,24 @@ describe('buildTaskViews', () => {
     expect(byRef['t:c']).toMatchObject({ list: 'class', classId: 'a' });
   });
 });
+
+describe('updateSubtask', () => {
+  it('patches one subtask on personal tasks and assignments', () => {
+    const subtasks = [
+      { id: 's1', title: 'one', done: false },
+      { id: 's2', title: 'two', done: false, doDate: '2026-10-27' },
+    ];
+    useStore.setState({ tasks: {}, meta: { hw: { uid: 'hw', status: 'todo', priority: 'none', subtasks, updatedAt: 1 } } });
+    const id = useStore.getState().addTask({ title: 'Test', subtasks });
+    useStore.getState().updateSubtask(`t:${id}`, 's2', { done: true });
+    useStore.getState().updateSubtask('a:hw', 's1', { doDate: '2026-10-28' });
+    const s = useStore.getState();
+    expect(s.tasks[id].subtasks.map((x) => x.done)).toEqual([false, true]);
+    expect(s.tasks[id].subtasks[1].doDate).toBe('2026-10-27');
+    expect(s.meta.hw.subtasks[0]).toEqual({ id: 's1', title: 'one', done: false, doDate: '2026-10-28' });
+    // Unknown ids are a no-op.
+    const before = s.meta.hw.updatedAt;
+    useStore.getState().updateSubtask('a:hw', 'nope', { done: true });
+    expect(useStore.getState().meta.hw.updatedAt).toBe(before);
+  });
+});

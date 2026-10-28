@@ -116,9 +116,14 @@ export interface Subtask {
   id: string;
   title: string;
   done: boolean;
+  /** Local day to work on it, `yyyy-MM-dd`; dated subtasks show up as their own items in Today and the planner. */
+  doDate?: string;
 }
 
-/** A scheduled work session for a task ("work on PA 3 Wed 2–3:30 PM"). */
+/**
+ * A scheduled work session for a task ("work on PA 3 Wed 2–3:30 PM"). Superseded by dated
+ * subtasks in the details drawer; existing blocks still load, render and can be removed.
+ */
 export interface WorkBlock {
   id: string;
   /** ISO start. */
