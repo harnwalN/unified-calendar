@@ -22,15 +22,45 @@ export function courseCode(course: string): string {
   return m ? `${m[1]} ${m[2]}` : n;
 }
 
-/** The live (non-deleted) class a course string belongs to, if any. */
+/**
+ * The live (non-deleted) class a course string belongs to, if any. Classes the user added by hand
+ * have no aliases until a course links to them, so those also match by their name's course code.
+ */
 export function findClassForCourse(classes: Record<string, ClassInfo>, course: string): ClassInfo | undefined {
   const norm = normalizeCourse(course);
   const code = courseCode(course);
   const live = Object.values(classes).filter((c) => !c.deleted);
   return (
     live.find((c) => c.aliases.includes(norm)) ??
-    live.find((c) => c.aliases.some((a) => courseCode(a) === code))
+    live.find((c) => c.aliases.some((a) => courseCode(a) === code)) ??
+    live.find((c) => !c.aliases.length && courseCode(c.name) === code)
   );
+}
+
+/** The live class with this name (compared like course strings: case and spacing ignored). */
+export function findClassByName(classes: Record<string, ClassInfo>, name: string): ClassInfo | undefined {
+  const norm = normalizeCourse(name);
+  return Object.values(classes).find((c) => !c.deleted && normalizeCourse(c.name) === norm);
+}
+
+/** Color for a new class: the first palette color no live class uses, else the next one in turn. */
+export function nextClassColor(classes: Record<string, ClassInfo>): string {
+  const live = Object.values(classes).filter((c) => !c.deleted);
+  const used = new Set(live.map((c) => c.color.toLowerCase()));
+  return PALETTE.find((c) => !used.has(c.toLowerCase())) ?? PALETTE[live.length % PALETTE.length];
+}
+
+/**
+ * Add a class by hand (for courses without Canvas/PrairieLearn assignments) and return its id.
+ * Reuses a live class with the same name instead of making a duplicate. Blank names return ''.
+ */
+export function createClass(name: string, color?: string): string {
+  const clean = name.trim().replace(/\s+/g, ' ');
+  if (!clean) return '';
+  const { classes, addClass } = useStore.getState();
+  const existing = findClassByName(classes, clean);
+  if (existing) return existing.id;
+  return addClass({ name: clean, color: color ?? nextClassColor(classes), aliases: [], manual: true });
 }
 
 /** True when the user deleted the class this course belonged to (so it isn't auto-created again). */
@@ -68,10 +98,9 @@ export function useAutoClasses(): void {
       if (match) {
         if (!match.aliases.includes(norm)) updateClass(match.id, { aliases: [...match.aliases, norm] });
         // Classes auto-named with a raw course string before courseCode understood it get the short name.
-        else if (match.name === norm && courseCode(course) !== norm) updateClass(match.id, { name: courseCode(course) });
+        else if (!match.manual && match.name === norm && courseCode(course) !== norm) updateClass(match.id, { name: courseCode(course) });
       } else if (!isDeletedCourse(snapshot, course)) {
-        const used = Object.values(snapshot).filter((c) => !c.deleted).length;
-        addClass({ name: courseCode(course), color: PALETTE[used % PALETTE.length], aliases: [norm] });
+        addClass({ name: courseCode(course), color: nextClassColor(snapshot), aliases: [norm] });
       }
       snapshot = useStore.getState().classes;
     }

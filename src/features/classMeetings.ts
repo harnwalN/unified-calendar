@@ -18,6 +18,24 @@ export function codesInTitle(title: string): string[] {
   return out;
 }
 
+const MEETING_WORDS = /\b(lectures?|lec|discussions?|disc|dis|labs?|laboratory|sections?|sect|seminar|recitation|tutorial|studio|workshop|office hours?|class|meeting)\b/gi;
+
+/**
+ * A name to pre-fill when making a class from an event title: its first course code
+ * ("CSE 110 Lecture" → "CSE 110"), else the title without meeting words ("Writing Workshop" → "Writing").
+ */
+export function suggestClassName(title: string): string {
+  const code = codesInTitle(title)[0];
+  if (code) return code;
+  const clean = title.trim().replace(/\s+/g, ' ');
+  const stripped = clean
+    .replace(MEETING_WORDS, ' ')
+    .replace(/\(\s*\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s\-–—:|/,·)]+|[\s\-–—:|/,·(]+$/g, '');
+  return stripped || clean;
+}
+
 /** Events that could be a class meeting: timed, not a deadline, not a scheduled work block. */
 export const isMeetingCandidate = (e: CalEvent) => !e.allDay && e.kind !== 'assignment' && e.calendarId !== PLANNED_CALENDAR_ID;
 
