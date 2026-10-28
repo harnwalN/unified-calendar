@@ -189,13 +189,14 @@ export function subtasksOnDay(tasks: TaskView[], day: string): SubtaskItem[] {
 /**
  * Minutes until the next timed (non-deadline) event that starts later today, capped at
  * `MAX_GAP_MIN`. 0 while an event is in progress and the next starts right after.
+ * `ignore` drops events that don't take up time (e.g. class meetings marked not attending).
  */
-export function freeMinutes(events: CalEvent[], now: Date): number {
+export function freeMinutes(events: CalEvent[], now: Date, ignore?: (e: CalEvent) => boolean): number {
   const nowMs = now.getTime();
   const endOfDay = addDays(startOfDay(now), 1).getTime();
   let next = Math.min(endOfDay, nowMs + MAX_GAP_MIN * 60_000);
   for (const e of events) {
-    if (e.allDay || e.kind === 'assignment' || e.start === e.end) continue;
+    if (e.allDay || e.kind === 'assignment' || e.start === e.end || ignore?.(e)) continue;
     const s = Date.parse(e.start);
     if (s > nowMs && s < next) next = s;
   }

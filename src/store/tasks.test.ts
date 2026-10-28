@@ -16,6 +16,7 @@ vi.hoisted(() => {
 import { PALETTE } from '../config';
 import type { CalEvent, ClassInfo, PersonalTask, TimeEntry } from '../types';
 import { migrateState, useStore } from './index';
+import { setMeetingSkipped } from '../features/classMeetings';
 import {
   buildTaskViews, courseCode, createClass, findClassByName, findClassForCourse, isDeletedCourse, nextClassColor, timeTotals,
 } from './tasks';
@@ -94,6 +95,26 @@ describe('manual classes', () => {
     const id = createClass('Lab');
     useStore.getState().deleteClass(id);
     expect(createClass('Lab')).not.toBe(id);
+  });
+});
+
+describe('setMeetingSkipped', () => {
+  it('toggles one occurrence, prunes old skips, and survives a merge', () => {
+    const now = Date.parse('2026-10-28T12:00:00Z');
+    const lecture = { id: 'g:lec_1', uid: 'g:lec_1', calendarId: 'g', title: 'CSE 110 Lecture', start: '2026-10-28T16:00:00.000Z', end: '2026-10-28T17:20:00.000Z', allDay: false, kind: 'event' } as CalEvent;
+    useStore.setState({
+      classes: {
+        a: cls('a', ['CSE 110'], { skipped: { 'g:old': '2026-01-05T16:00:00.000Z' } }),
+        b: cls('b', ['CSE 110 LAB'], { skipped: { 'g:lab': '2026-10-27T16:00:00.000Z' } }),
+      },
+    });
+    setMeetingSkipped('a', lecture, true, now);
+    expect(useStore.getState().classes.a.skipped).toEqual({ 'g:lec_1': lecture.start });
+    setMeetingSkipped('a', lecture, false, now);
+    expect(useStore.getState().classes.a.skipped).toEqual({});
+    setMeetingSkipped('a', lecture, true, now);
+    useStore.getState().mergeClasses('b', 'a');
+    expect(useStore.getState().classes.a.skipped).toEqual({ 'g:lec_1': lecture.start, 'g:lab': '2026-10-27T16:00:00.000Z' });
   });
 });
 

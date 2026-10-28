@@ -156,6 +156,13 @@
 .tb-event span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-event:hover { filter: brightness(1.08); z-index: 2; }
 .tb-event.past { opacity: .55; }
+/* Not attending: an outline in the class color, struck through. */
+.tb-event.skipped {
+  background: color-mix(in srgb, var(--ev-color) 12%, var(--surface));
+  color: var(--text-3);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ev-color) 55%, transparent), 0 0 0 1px var(--surface);
+  text-decoration: line-through;
+}
 .tb-event.planned {
   background: color-mix(in srgb, var(--ev-color) 18%, var(--surface));
   color: color-mix(in srgb, var(--ev-color) 70%, var(--text));

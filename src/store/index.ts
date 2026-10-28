@@ -316,6 +316,7 @@ export const useStore = create<AppState>()(
                 ...into,
                 aliases: [...new Set([...into.aliases, ...from.aliases])],
                 meetingTitles: [...new Set([...(into.meetingTitles ?? []), ...(from.meetingTitles ?? [])])],
+                skipped: { ...from.skipped, ...into.skipped },
                 updatedAt: now,
               },
               [fromId]: { ...from, aliases: [], deleted: true, updatedAt: now },

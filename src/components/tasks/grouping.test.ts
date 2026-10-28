@@ -202,6 +202,13 @@ describe('freeMinutes / fitsGap', () => {
     expect(freeMinutes(events, NOW)).toBe(180);
   });
 
+  it('skips events the caller ignores (meetings marked not attending)', () => {
+    const skipped = ev({ id: 'skip', start: at(26, 16, 30), end: at(26, 17, 0) });
+    const events = [skipped, ev({ start: at(26, 17, 0), end: at(26, 18, 0) })];
+    expect(freeMinutes(events, NOW)).toBe(150);
+    expect(freeMinutes(events, NOW, (e) => e.id === 'skip')).toBe(180);
+  });
+
   it('stops at midnight', () => {
     expect(freeMinutes([], new Date(2026, 9, 26, 23, 0))).toBe(60);
   });

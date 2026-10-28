@@ -43,6 +43,8 @@ export interface ClassMatch {
   cls: ClassInfo;
   /** 'manual' when the user picked it, 'auto' when found from a course code. */
   source: 'manual' | 'auto';
+  /** The user marked this occurrence as not attending. */
+  skipped: boolean;
 }
 
 export type ClassMatcher = (e: CalEvent) => ClassMatch | null;
@@ -64,14 +66,33 @@ export function makeClassMatcher(classes: ClassInfo[], notClass: string[] = []):
     if (!isMeetingCandidate(e)) return null;
     const key = eventTitleKey(e.title);
     const picked = manual.get(key);
-    if (picked) return { cls: picked, source: 'manual' };
+    if (picked) return { cls: picked, source: 'manual', skipped: !!picked.skipped?.[e.id] };
     if (excluded.has(key)) return null;
     for (const code of codesInTitle(e.title)) {
       const cls = byCode.get(code);
-      if (cls) return { cls, source: 'auto' };
+      if (cls) return { cls, source: 'auto', skipped: !!cls.skipped?.[e.id] };
     }
     return null;
   };
+}
+
+/** True for a class meeting the user isn't attending; such events don't block time or count as class. */
+export const isSkippedMeeting = (match: ClassMatcher, e: CalEvent) => !!match(e)?.skipped;
+
+/** Skipped meetings older than this are forgotten so the per-class list stays small. */
+const SKIP_KEEP_MS = 120 * 86_400_000;
+
+/** Mark one occurrence of a class meeting as not attending (or attending again). */
+export function setMeetingSkipped(classId: string, e: CalEvent, skipped: boolean, now = Date.now()) {
+  const { classes, updateClass } = useStore.getState();
+  const cls = classes[classId];
+  if (!cls) return;
+  const next: Record<string, string> = {};
+  for (const [id, start] of Object.entries(cls.skipped ?? {})) {
+    if (id !== e.id && now - Date.parse(start) < SKIP_KEEP_MS) next[id] = start;
+  }
+  if (skipped) next[e.id] = e.start;
+  updateClass(classId, { skipped: next });
 }
 
 export interface MeetingSpan {
@@ -87,7 +108,7 @@ export function meetingSpans(events: CalEvent[], match: ClassMatcher, from: numb
   const out: MeetingSpan[] = [];
   for (const e of events) {
     const m = match(e);
-    if (!m) continue;
+    if (!m || m.skipped) continue;
     const start = Math.max(Date.parse(e.start), from);
     const end = Math.min(Date.parse(e.end), until);
     if (end > start) out.push({ classId: m.cls.id, title: e.title, start, end });

@@ -53,6 +53,9 @@
 
 .ep-done { cursor: pointer; font-weight: 500; }
 .ep-done input { width: 18px; height: 18px; margin: 0; accent-color: var(--ev); cursor: pointer; }
+.ep-attend { cursor: pointer; }
+.ep-attend .ep-text { display: flex; flex-direction: column; gap: 2px; }
+.ep-attend input { width: 18px; height: 18px; margin: 0; accent-color: var(--ev); cursor: pointer; }
 
 .ep-text { min-width: 0; overflow-wrap: anywhere; }
 .ep-desc { margin: 0; white-space: pre-wrap; color: var(--text-2); max-height: 40vh; overflow-y: auto; }

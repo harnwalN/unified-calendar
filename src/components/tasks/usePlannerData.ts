@@ -16,6 +16,8 @@ export interface EventSpan extends Span {
   planned: boolean;
   /** Name of the class this event is a meeting of (lecture, lab…), if any. */
   className?: string;
+  /** A class meeting the user marked as not attending. */
+  skipped?: boolean;
 }
 
 export interface TrackedSpan extends Span {
@@ -74,6 +76,7 @@ export function usePlannerData(now: number): (date: Date | number) => DayData {
       const m = t.planned ? null : match(t.event);
       t.color = m ? m.cls.color : (colors.get(t.id) ?? t.color);
       if (m) t.className = m.cls.name;
+      if (m?.skipped) t.skipped = true;
     }
     const due = tasks.filter((t): t is DueTask => t.status !== 'done' && !!t.due);
     const tracked: TrackedSpan[] = Object.values(entries)
