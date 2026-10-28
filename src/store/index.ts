@@ -302,7 +302,12 @@ export const useStore = create<AppState>()(
             tasks,
             classes: {
               ...s.classes,
-              [intoId]: { ...into, aliases: [...new Set([...into.aliases, ...from.aliases])], updatedAt: now },
+              [intoId]: {
+                ...into,
+                aliases: [...new Set([...into.aliases, ...from.aliases])],
+                meetingTitles: [...new Set([...(into.meetingTitles ?? []), ...(from.meetingTitles ?? [])])],
+                updatedAt: now,
+              },
               [fromId]: { ...from, aliases: [], deleted: true, updatedAt: now },
             },
           };

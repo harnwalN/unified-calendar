@@ -1,7 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Some Node versions ship a stub global localStorage that shadows jsdom's; use an in-memory one.
+vi.hoisted(() => {
+  const data = new Map<string, string>();
+  const storage = {
+    getItem: (k: string) => data.get(k) ?? null,
+    setItem: (k: string, v: string) => void data.set(k, String(v)),
+    removeItem: (k: string) => void data.delete(k),
+    clear: () => data.clear(),
+    key: (i: number) => [...data.keys()][i] ?? null,
+    get length() { return data.size; },
+  };
+  Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true });
+});
+import { PALETTE } from '../config';
 import type { CalEvent, ClassInfo, PersonalTask, TimeEntry } from '../types';
-import { migrateState } from './index';
-import { buildTaskViews, courseCode, findClassForCourse, isDeletedCourse, timeTotals } from './tasks';
+import { migrateState, useStore } from './index';
+import {
+  buildTaskViews, courseCode, createClass, findClassByName, findClassForCourse, isDeletedCourse, nextClassColor, timeTotals,
+} from './tasks';
 
 const cls = (id: string, aliases: string[], extra: Partial<ClassInfo> = {}): ClassInfo => ({
   id, name: id, color: '#000', aliases, order: 0, updatedAt: 1, ...extra,
@@ -36,6 +53,47 @@ describe('findClassForCourse', () => {
   it('remembers deleted courses so they are not auto-created again', () => {
     expect(isDeletedCourse(classes, 'math 18')).toBe(true);
     expect(isDeletedCourse(classes, 'CSE 110')).toBe(false);
+  });
+});
+
+describe('manual classes', () => {
+  beforeEach(() => useStore.setState({ classes: {} }));
+
+  it('match a course by name until a course links to them', () => {
+    const classes = { m: cls('m', [], { name: 'CSE 110', manual: true }), w: cls('w', [], { name: 'Writing', manual: true }) };
+    expect(findClassForCourse(classes, 'CSE 110 - Lecture A00 (FA26)')?.id).toBe('m');
+    expect(findClassForCourse(classes, 'CSE 120')).toBeUndefined();
+    // Once a class has aliases, its name no longer matches courses.
+    expect(findClassForCourse({ a: cls('a', ['MATH 18'], { name: 'CSE 120' }) }, 'CSE 120')).toBeUndefined();
+  });
+
+  it('finds classes by name ignoring case and spacing', () => {
+    const classes = { a: cls('a', [], { name: 'Piano  lessons' }), b: cls('b', [], { name: 'Old', deleted: true }) };
+    expect(findClassByName(classes, ' piano lessons ')?.id).toBe('a');
+    expect(findClassByName(classes, 'old')).toBeUndefined();
+  });
+
+  it('picks the first unused palette color, then cycles', () => {
+    expect(nextClassColor({})).toBe(PALETTE[0]);
+    expect(nextClassColor({ a: cls('a', [], { color: PALETTE[0].toUpperCase() }), b: cls('b', [], { color: PALETTE[2] }) })).toBe(PALETTE[1]);
+    const full = Object.fromEntries(PALETTE.map((c, i) => [`c${i}`, cls(`c${i}`, [], { color: c })]));
+    expect(nextClassColor({ ...full, x: cls('x', [], { color: PALETTE[0] }) })).toBe(PALETTE[(PALETTE.length + 1) % PALETTE.length]);
+  });
+
+  it('creates a class once per name and returns its id', () => {
+    const id = createClass('  Piano   lessons ');
+    const c = useStore.getState().classes[id];
+    expect(c).toMatchObject({ name: 'Piano lessons', aliases: [], manual: true, color: PALETTE[0], order: 0 });
+    expect(createClass('PIANO LESSONS')).toBe(id);
+    expect(createClass('Chem 6A', '#123456')).not.toBe(id);
+    expect(Object.keys(useStore.getState().classes)).toHaveLength(2);
+    expect(createClass('   ')).toBe('');
+  });
+
+  it('makes a new class when the same-named one was deleted', () => {
+    const id = createClass('Lab');
+    useStore.getState().deleteClass(id);
+    expect(createClass('Lab')).not.toBe(id);
   });
 });
 
