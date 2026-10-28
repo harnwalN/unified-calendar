@@ -4,8 +4,8 @@ import { plannedTaskRef, useAllEvents, useCalendarColor } from '../store/selecto
 import { describeWhen } from '../lib/time';
 import type { CalEvent, SourceKind } from '../types';
 import Icon from './Icon';
-import { useClasses } from '../store/tasks';
-import { assignEventTitle, isMeetingCandidate, useClassMatcher } from '../features/classMeetings';
+import { assignEventTitle, codesInTitle, isMeetingCandidate, useClassMatcher } from '../features/classMeetings';
+import ClassSelect from './ClassSelect';
 import { htmlToText, linkify, safeHref } from './eventText';
 import './EventPopover.css';
 
@@ -158,30 +158,26 @@ function PopoverCard({ event }: { event: CalEvent }) {
 
 /** Which class this event (and every event with the same title) is a meeting of. */
 function ClassPick({ event }: { event: CalEvent }) {
-  const classes = useClasses();
   const match = useClassMatcher()(event);
-  if (!classes.length) return null;
   const value = match ? (match.source === 'manual' ? match.cls.id : 'auto') : 'none';
+  const extra = [
+    ...(match?.source === 'auto' ? [{ value: 'auto', label: `${match.cls.name} (from the title)` }] : []),
+    { value: 'none', label: 'Not a class' },
+    ...(value !== 'auto' ? [{ value: 'auto', label: 'Detect automatically' }] : []),
+  ];
   return (
     <div className="ep-row class-pick">
       <Icon name="school" className="ep-icon" />
-      <label className="ep-text">
-        <span className="sr-only">Class</span>
-        <select value={value} onChange={(e) => assignEventTitle(event.title, e.target.value)}>
-          {match?.source === 'auto' && <option value="auto">{match.cls.name} (from the title)</option>}
-          {!match && <option value="none">Not a class</option>}
-          {classes
-            .filter((c) => !(match?.source === 'auto' && c.id === match.cls.id))
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          {match && <option value="none">Not a class</option>}
-          {value !== 'auto' && <option value="auto">Detect automatically</option>}
-        </select>
+      <div className="ep-text">
+        <ClassSelect
+          label="Class"
+          value={value}
+          extraOptions={extra}
+          suggestedName={codesInTitle(event.title)[0] ?? event.title}
+          onChange={(v) => assignEventTitle(event.title, v)}
+        />
         <span className="class-pick-hint">Applies to every “{event.title.trim()}”</span>
-      </label>
+      </div>
     </div>
   );
 }
