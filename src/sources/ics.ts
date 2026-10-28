@@ -15,7 +15,8 @@ export async function fetchIcsText(url: string): Promise<string> {
   if (!WORKER_URL) throw new Error('The calendar proxy is not configured (VITE_WORKER_URL is empty).');
   let res: Response;
   try {
-    res = await fetch(`${WORKER_URL}/ics?url=${encodeURIComponent(url.trim())}`);
+    // The Worker answers with max-age=300; skip the browser cache so "Sync now" really refetches.
+    res = await fetch(`${WORKER_URL}/ics?url=${encodeURIComponent(url.trim())}`, { cache: 'no-store' });
   } catch {
     throw new Error("Couldn't reach the calendar proxy. Check your internet connection.");
   }
@@ -108,6 +109,7 @@ export function parseIcsOccurrences(
     if (!uid) singles.push(ve);
     else if (ve.hasProperty('recurrence-id')) exceptions.push(ve);
     else if (!masters.has(uid)) masters.set(uid, ve);
+    else singles.push(ve); // UID reused for a different event (non-conforming feeds): keep it
   }
 
   const events = new Map<string, IcalEvent>();
@@ -119,6 +121,7 @@ export function parseIcsOccurrences(
   }
 
   const occurrences: IcsOccurrence[] = [];
+  const seen = new Set<string>();
   const push = (item: IcalEvent, startT: Time, endT: Time, recurrenceKey?: string) => {
     if (isCancelled(item.component)) return;
     const allDay = startT.isDate;
@@ -129,8 +132,13 @@ export function parseIcsOccurrences(
     // Point events (start === end) count when they fall inside the range.
     const inRange = end.getTime() === start.getTime() ? start >= rangeStart && start < rangeEnd : end > rangeStart && start < rangeEnd;
     if (!inRange) return;
+    const rawUid = item.uid || stringProp(item.component, 'uid') || `${item.summary}@${start.toISOString()}`;
+    // Exact duplicates (same UID and start) would collide on CalEvent.id.
+    const dedupeKey = `${rawUid}|${recurrenceKey ?? ''}|${start.getTime()}`;
+    if (seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
     occurrences.push({
-      rawUid: item.uid || stringProp(item.component, 'uid') || `${item.summary}@${start.toISOString()}`,
+      rawUid,
       recurrenceKey,
       start,
       end,

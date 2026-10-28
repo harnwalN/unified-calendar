@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore, sourceKeyFor } from '../store';
 import { connectGoogleAccount, disconnectGoogleAccount } from '../sources/google';
-import { syncAll } from '../sources/sync';
+import { syncAll, syncSource } from '../sources/sync';
 import { GOOGLE_CLIENT_ID, WORKER_URL } from '../config';
 import type { GoogleAccount } from '../types';
 import Icon from './Icon';
@@ -69,9 +69,18 @@ export default function SettingsGoogleAccounts({ compact = false }: { compact?: 
               </div>
             </div>
             <div className="s-item__actions">
-              {a.needsReconnect && (
+              {a.needsReconnect ? (
                 <button className="s-btn s-btn--tonal s-btn--small" disabled={busy !== null} onClick={() => connect(a.email)}>
                   Reconnect
+                </button>
+              ) : (
+                <button
+                  className="s-icon-btn s-icon-btn--small"
+                  title="Sync now"
+                  aria-label={`Sync ${a.email} now`}
+                  onClick={() => void syncSource(sourceKeyFor.google(a.id))}
+                >
+                  <Icon name="sync" />
                 </button>
               )}
               <button
