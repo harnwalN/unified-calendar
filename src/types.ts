@@ -168,6 +168,8 @@ export interface ClassInfo extends Synced {
   hidden?: boolean;
   /** Event titles (see `eventTitleKey`) the user marked as this class's meetings (lectures, labs…). */
   meetingTitles?: string[];
+  /** Added by hand in the app rather than created from an assignment's course. */
+  manual?: boolean;
 }
 
 /** Identifies a task: `a:<CalEvent.uid>` for assignments, `t:<PersonalTask.id>` for personal tasks. */

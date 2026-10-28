@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PALETTE } from '../config';
 import { useStore } from '../store';
-import { useClasses } from '../store/tasks';
+import { createClass, findClassByName, nextClassColor, useClasses } from '../store/tasks';
 import type { ClassInfo } from '../types';
 import Icon from './Icon';
 import './Settings.css';
@@ -123,7 +123,7 @@ function ClassRow({ cls, index, all, move }: {
             </div>
           )}
           <div className="s-item__sub" title={cls.aliases.join(', ')}>
-            {cls.aliases.length ? cls.aliases.join(' · ') : 'No linked courses'}
+            {cls.aliases.length ? cls.aliases.join(' · ') : cls.manual ? 'Added by you' : 'No linked courses'}
           </div>
         </div>
         <div className="s-item__actions">
@@ -209,7 +209,86 @@ function ClassRow({ cls, index, all, move }: {
   );
 }
 
-/** Settings → Classes: color, rename, order, hide, delete and merge the classes tasks are grouped by. */
+/** Name + color form for adding a class by hand. */
+function AddClass() {
+  const classes = useStore((s) => s.classes);
+  const [name, setName] = useState('');
+  const [picked, setPicked] = useState<string | null>(null);
+  const [palette, setPalette] = useState(false);
+  const [msg, setMsg] = useState('');
+  const color = picked ?? nextClassColor(classes);
+  const clean = name.trim();
+  const dupe = clean ? findClassByName(classes, clean) : undefined;
+
+  return (
+    <form
+      className="cls-add"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!clean || dupe) return;
+        createClass(clean, color);
+        setMsg(`Added “${clean}”.`);
+        setName('');
+        setPicked(null);
+        setPalette(false);
+      }}
+    >
+      <div className="cls-add__line">
+        <button
+          type="button"
+          className="cls-row__swatch"
+          style={{ background: color }}
+          aria-label="Color for the new class"
+          aria-expanded={palette}
+          onClick={() => setPalette((p) => !p)}
+        />
+        <label className="s-field cls-add__name">
+          <span className="sr-only">New class name</span>
+          <input
+            className="s-input"
+            value={name}
+            placeholder="New class, e.g. CHEM 6A"
+            maxLength={60}
+            aria-invalid={!!dupe}
+            aria-describedby="cls-add-msg"
+            onChange={(e) => {
+              setName(e.target.value);
+              setMsg('');
+            }}
+          />
+        </label>
+        <button type="submit" className="s-btn s-btn--tonal" disabled={!clean || !!dupe}>
+          <Icon name="add" /> Add
+        </button>
+      </div>
+      {palette && (
+        <div className="cls-add__palette s-swatches" role="group" aria-label="Color for the new class">
+          {PALETTE.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className="s-swatch"
+              style={{ background: c }}
+              aria-label={c}
+              aria-pressed={c.toLowerCase() === color.toLowerCase()}
+              onClick={() => {
+                setPicked(c);
+                setPalette(false);
+              }}
+            >
+              {c.toLowerCase() === color.toLowerCase() && <Icon name="check" />}
+            </button>
+          ))}
+        </div>
+      )}
+      <p id="cls-add-msg" className={`s-msg cls-add__msg${dupe ? ' s-msg--error' : ' s-msg--ok'}`} aria-live="polite">
+        {dupe ? `“${dupe.name}” already exists.` : msg}
+      </p>
+    </form>
+  );
+}
+
+/** Settings → Classes: add, color, rename, order, hide, delete and merge the classes tasks are grouped by. */
 export default function SettingsClasses() {
   const classes = useClasses();
   const updateClass = useStore((s) => s.updateClass);
@@ -222,25 +301,34 @@ export default function SettingsClasses() {
     next.forEach((c, i) => c.order !== i && updateClass(c.id, { order: i }));
   };
 
-  if (!classes.length) {
-    return (
-      <p className="s-msg">
-        <Icon name="info" /> Classes appear automatically from your Canvas and PrairieLearn assignments.
-      </p>
-    );
-  }
   return (
     <div className="s-stack">
-      <ul className="s-list cls-list">
-        {classes.map((c, i) => <ClassRow key={c.id} cls={c} index={i} all={classes} move={move} />)}
-      </ul>
-      <p className="s-msg">
-        <Icon name="info" />
-        <span>
-          The same course can show up under different names (for example “CSE 110 - FA26” on Canvas and “CSE 110” on
-          PrairieLearn). Use <b>Merge</b> in a class’s menu to combine them into one class.
-        </span>
-      </p>
+      {classes.length ? (
+        <ul className="s-list cls-list">
+          {classes.map((c, i) => <ClassRow key={c.id} cls={c} index={i} all={classes} move={move} />)}
+        </ul>
+      ) : (
+        <div className="cls-empty">
+          <Icon name="school" />
+          <div>
+            <b>No classes yet</b>
+            <span>
+              Classes appear automatically from your Canvas and PrairieLearn assignments. Add any others yourself, like
+              a class without online assignments, so you can file tasks and class time under it.
+            </span>
+          </div>
+        </div>
+      )}
+      <AddClass />
+      {classes.length > 0 && (
+        <p className="s-msg">
+          <Icon name="info" />
+          <span>
+            The same course can show up under different names (for example “CSE 110 - FA26” on Canvas and “CSE 110” on
+            PrairieLearn). Use <b>Merge</b> in a class’s menu to combine them into one class.
+          </span>
+        </p>
+      )}
     </div>
   );
 }

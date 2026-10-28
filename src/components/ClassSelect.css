@@ -1,0 +1,23 @@
+/* Inline "New class…" field that replaces a ClassSelect's <select> while naming the class. */
+.class-new { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+.class-new input {
+  width: 11em; min-width: 0; height: 32px; padding: 0 10px;
+  border: 1px solid var(--primary); border-radius: var(--radius-m);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 13px;
+}
+.class-new input:focus { outline: none; box-shadow: inset 0 0 0 1px var(--primary); }
+.class-new input::placeholder { color: var(--text-3); }
+.class-new__btn {
+  width: 32px; height: 32px; flex: none; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--text-2);
+}
+.class-new__btn .material-symbols-outlined { font-size: 18px; }
+.class-new__btn:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.class-new__btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.class-new__btn:disabled { opacity: .4; cursor: default; background: transparent; }
+.class-new__btn--ok { color: var(--primary); }
+
+@media (max-width: 480px) {
+  .class-new input { width: 8.5em; }
+}
