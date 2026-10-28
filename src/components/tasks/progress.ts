@@ -24,6 +24,8 @@ export function progressVars(task: TaskView, liveMs = 0): CSSProperties {
   const p = taskProgress(task, Math.floor(liveMs / 60_000) * 60_000);
   return {
     '--progress': `${Math.round(p * 1000) / 10}%`,
+    // A thin line marks where the done share ends, so a nearly full bar doesn't read as a short row.
+    ...(p > 0 && p < 1 && { '--progress-edge': 'var(--progress-edge-color)' }),
     ...(task.priority !== 'none' && { '--prio-tint': `var(--prio-${task.priority}-tint)` }),
   } as CSSProperties;
 }

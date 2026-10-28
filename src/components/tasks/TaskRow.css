@@ -21,11 +21,9 @@
   /* The background is a progress bar: green for the done share from the left (--progress),
      the priority tint for the rest (--prio-tint, unset = none). Both are set inline from
      progressVars() and sit over background-color, so hover/highlight still show through. */
-  background-image: linear-gradient(
-    to right,
-    var(--progress-tint) var(--progress),
-    var(--prio-tint, transparent) var(--progress)
-  );
+  background-image:
+    linear-gradient(to right, transparent calc(var(--progress) - 2px), var(--progress-edge, transparent) calc(var(--progress) - 2px) var(--progress), transparent var(--progress)),
+    linear-gradient(to right, var(--progress-tint) var(--progress), var(--prio-tint, transparent) var(--progress));
   /* Meta text stays AA over any tint. */
   --text-3: var(--text-3-on-tint);
   --success: var(--success-on-tint);

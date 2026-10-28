@@ -53,6 +53,7 @@ describe('progressVars', () => {
   it('sets the done share and the priority tint', () => {
     expect(progressVars(task({ priority: 'high', estimateMin: 30, timeTotalMs: 10 * MIN }))).toEqual({
       '--progress': '33.3%',
+      '--progress-edge': 'var(--progress-edge-color)',
       '--prio-tint': 'var(--prio-high-tint)',
     });
   });
@@ -64,6 +65,6 @@ describe('progressVars', () => {
   it('only moves with whole minutes of live time', () => {
     const t = task({ estimateMin: 100 });
     expect(progressVars(t, 59_999)).toEqual({ '--progress': '0%' });
-    expect(progressVars(t, 2 * MIN + 30_000)).toEqual({ '--progress': '2%' });
+    expect(progressVars(t, 2 * MIN + 30_000)).toEqual({ '--progress': '2%', '--progress-edge': 'var(--progress-edge-color)' });
   });
 });
