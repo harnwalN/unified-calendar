@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { useStore } from '../../store';
 import { useTasks } from '../../store/tasks';
@@ -8,10 +8,11 @@ import Icon from '../Icon';
 import SceneryBanner from '../scenery/SceneryBanner';
 import { usePageScene } from '../scenery/SceneBackdrop';
 import { useNow } from '../hooks';
-import { fitsGap, freeMinutes, type ClassSection, type TaskGroup } from './grouping';
+import { fitsGap, freeMinutes, type ClassSection, type SubtaskItem, type TaskGroup } from './grouping';
 import { formatEstimate, greeting } from './format';
 import { useCollapsedSections, useHomeSections } from './useHomeData';
 import TaskRow from './TaskRow';
+import { SubtaskList, SubtaskTodayRow } from './SubtaskRows';
 import QuickAdd from './QuickAdd';
 import Planner from './Planner';
 import './TasksHome.css';
@@ -21,7 +22,8 @@ export default function TasksHome() {
   const tasks = useTasks();
   const hasSources = useStore((s) => Object.keys(s.calendars).length > 0 || s.feeds.length > 0 || s.accounts.length > 0);
   const [collapsed, toggle] = useCollapsedSections();
-  const { today, classes, personal, quick, openCount, dueTodayCount, overdueCount } = sections;
+  const { today, todaySubtasks, classes, personal, quick, openCount, dueTodayCount, overdueCount } = sections;
+  const todayCount = today.length + todaySubtasks.length;
   const pageScene = usePageScene();
 
   const summary = [
@@ -80,9 +82,9 @@ export default function TasksHome() {
               </div>
             )}
 
-            <Section id="today" title="Today" icon="today" count={today.length} collapsed={collapsed.today} onToggle={toggle}>
-              {today.length ? (
-                <TaskList tasks={today} now={now} />
+            <Section id="today" title="Today" icon="today" count={todayCount} collapsed={collapsed.today} onToggle={toggle}>
+              {todayCount ? (
+                <TaskList tasks={today} subtasks={todaySubtasks} now={now} />
               ) : (
                 <p className="th-none">Nothing due or planned for today.</p>
               )}
@@ -138,11 +140,30 @@ function HeroClock() {
   );
 }
 
-function TaskList({ tasks, now, showClass = true, fits }: { tasks: TaskView[]; now: Date; showClass?: boolean; fits?: (t: TaskView) => boolean }) {
+/** Task rows with their subtasks nested underneath; `subtasks` adds dated subtasks as rows of their own (Today). */
+function TaskList({
+  tasks,
+  subtasks = [],
+  now,
+  showClass = true,
+  fits,
+}: {
+  tasks: TaskView[];
+  subtasks?: SubtaskItem[];
+  now: Date;
+  showClass?: boolean;
+  fits?: (t: TaskView) => boolean;
+}) {
   return (
     <ul className="task-list">
       {tasks.map((t) => (
-        <TaskRow key={t.ref} task={t} now={now} showClass={showClass} highlight={fits?.(t)} />
+        <Fragment key={t.ref}>
+          <TaskRow task={t} now={now} showClass={showClass} highlight={fits?.(t)} />
+          <SubtaskList task={t} now={now} />
+        </Fragment>
+      ))}
+      {subtasks.map((item) => (
+        <SubtaskTodayRow key={`${item.parent.ref}/${item.sub.id}`} item={item} now={now} />
       ))}
     </ul>
   );

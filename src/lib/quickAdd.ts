@@ -1,7 +1,7 @@
 // Pure natural-language parser behind the home screen's quick-add box.
 // "PA 3 fri 11:59pm #CSE110 !high ~2h @wed" → title "PA 3", due Fri 11:59 PM, class CSE 110, …
 import { addDays, format, startOfDay } from 'date-fns';
-import type { ClassInfo, Priority } from '../types';
+import type { ClassInfo, Priority, Subtask } from '../types';
 import { courseCode } from '../store/tasks';
 
 export interface QuickAddResult {
@@ -14,6 +14,45 @@ export interface QuickAddResult {
   priority: Priority;
   estimateMin?: number;
   list: 'personal' | 'quick';
+}
+
+/** Everything the add form can set besides the title. */
+export interface TaskDraft {
+  /** ISO. */
+  due?: string;
+  /** Local `yyyy-MM-dd`. */
+  doDate?: string;
+  classId?: string;
+  priority: Priority;
+  estimateMin?: number;
+  list: 'personal' | 'quick';
+  notes?: string;
+  subtasks: Subtask[];
+}
+
+/** Where a new task goes unless the text or the form says otherwise. */
+export type AddTarget = 'personal' | 'quick' | `class:${string}`;
+
+/**
+ * Form values for a new task. Typed tokens win over the "Add to" picker (#CSE110 picks a class,
+ * a leading "q" or a short estimate makes it quick); fields edited in the form win over both
+ * (an explicit `undefined` in `edits` clears a typed value). Quick items never keep a class.
+ */
+export function buildDraft(parsed: QuickAddResult | null, target: AddTarget, edits: Partial<TaskDraft> = {}): TaskDraft {
+  const picked = target.startsWith('class:') ? target.slice(6) : undefined;
+  const quick = parsed?.list === 'quick' || (!parsed?.classId && target === 'quick');
+  const draft: TaskDraft = {
+    due: parsed?.due,
+    doDate: parsed?.doDate,
+    classId: parsed?.classId ?? picked,
+    priority: parsed?.priority ?? 'none',
+    estimateMin: parsed?.estimateMin,
+    list: quick ? 'quick' : 'personal',
+    subtasks: [],
+    ...edits,
+  };
+  if (draft.list === 'quick') draft.classId = undefined;
+  return draft;
 }
 
 /** Estimates at or below this many minutes make a task a quick item. */
