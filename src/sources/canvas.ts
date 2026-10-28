@@ -13,8 +13,12 @@ export function splitCanvasTitle(summary: string): { title: string; course?: str
   return { title: m[1].trim(), course: m[2].trim() };
 }
 
+/**
+ * Canvas UIDs are `event-<class>-<id>`: assignments (incl. `event-assignment-override-…` for
+ * section/student due dates) and discussion checkpoints (`event-sub-assignment-…`) are deadlines.
+ */
 export function isAssignmentUid(uid: string): boolean {
-  return uid.startsWith('event-assignment-');
+  return uid.startsWith('event-assignment-') || uid.startsWith('event-sub-assignment-');
 }
 
 export function courseColor(course: string): string {

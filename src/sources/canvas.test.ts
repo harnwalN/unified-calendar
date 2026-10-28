@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTE } from '../config';
-import { courseColor, parseCanvas, splitCanvasTitle } from './canvas';
+import { courseColor, isAssignmentUid, parseCanvas, splitCanvasTitle } from './canvas';
 
 const FEED = [
   'BEGIN:VCALENDAR',
@@ -91,5 +91,39 @@ describe('parseCanvas', () => {
       end: '2026-10-30T00:30:00.000Z',
     });
     expect(byUid['event-calendar-event-56']).toMatchObject({ calendarId: 'canvas:f1', course: undefined });
+  });
+});
+
+describe('isAssignmentUid', () => {
+  it('recognizes assignments, due-date overrides and discussion checkpoints', () => {
+    expect(isAssignmentUid('event-assignment-101')).toBe(true);
+    expect(isAssignmentUid('event-assignment-override-7')).toBe(true);
+    expect(isAssignmentUid('event-sub-assignment-12')).toBe(true);
+    expect(isAssignmentUid('event-calendar-event-55')).toBe(false);
+  });
+});
+
+describe('parseCanvas with checkpoints and Canvas-style UTC times', () => {
+  it('treats sub-assignments as deadlines and keeps uids stable across syncs', () => {
+    const text = [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'UID:event-sub-assignment-12',
+      'SUMMARY:Discussion 4 Reply to Topic [CSE 110 - FA26]',
+      'DTSTART;VALUE=DATE:20261105',
+      'END:VEVENT',
+      'BEGIN:VEVENT',
+      'UID:event-assignment-103',
+      'SUMMARY:Lab 2 [CSE 110 - FA26]',
+      'DTSTART;TZID=UTC:20261106T065900',
+      'DTEND;TZID=UTC:20261106T065900',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const first = parseCanvas(text, feed, range).events;
+    const due = new Date(2026, 10, 5, 23, 59).toISOString();
+    expect(first[0]).toMatchObject({ uid: 'event-sub-assignment-12', kind: 'assignment', start: due, allDay: false });
+    expect(first[1]).toMatchObject({ uid: 'event-assignment-103', kind: 'assignment', start: '2026-11-06T06:59:00.000Z' });
+    expect(parseCanvas(text, feed, range).events.map((e) => [e.id, e.uid])).toEqual(first.map((e) => [e.id, e.uid]));
   });
 });
