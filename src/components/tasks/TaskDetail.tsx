@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { addDays, format } from 'date-fns';
-import { newId, taskRef, useStore } from '../../store';
-import { dayKey, useClasses, useTasks } from '../../store/tasks';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { format } from 'date-fns';
+import { taskRef, useStore } from '../../store';
+import { useClasses, useTasks } from '../../store/tasks';
 import { toggleTimer, useRunningElapsed } from '../../features/timer';
-import type { Priority, TaskStatus, TaskView } from '../../types';
+import type { TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
 import { safeHref } from '../eventText';
 import TaskTimeEntries from '../time/TaskTimeEntries';
-import ScheduleForm from './ScheduleForm';
-import { dueLabel, formatDuration, formatEstimate, openLinkLabel, relativeDue } from './format';
-import { PRIORITY_LABEL, STATUS_LABEL, StatusCheck, useTaskColor } from './TaskRow';
+import { dueLabel, formatDuration, openLinkLabel, relativeDue } from './format';
+import { formatBlock } from './schedule';
+import { DoDateField, DueInput, EstimateField, Field, ListField, NotesField, PriorityField, Segmented, SubtaskEditor } from './TaskFields';
+import { STATUS_LABEL, StatusCheck, useTaskColor } from './TaskRow';
 import './TaskDetail.css';
 
 const STATUSES: TaskStatus[] = ['todo', 'doing', 'done'];
-const PRIORITIES: Priority[] = ['none', 'low', 'medium', 'high'];
-const ESTIMATES = [10, 30, 60, 120];
 
 type Deleted = { id: string; title: string };
 const deletedListeners = new Set<(d: Deleted) => void>();
@@ -182,33 +181,11 @@ function Drawer({ task, onDeleted }: { task: TaskView; onDeleted: (id: string, t
             />
           </Field>
 
-          <Field label="Priority">
-            <Segmented
-              name="Priority"
-              value={task.priority}
-              options={PRIORITIES.map((p) => ({ value: p, label: p === 'none' ? 'None' : PRIORITY_LABEL[p], className: p }))}
-              onChange={(priority) => patch({ priority })}
-            />
-          </Field>
+          <PriorityField value={task.priority} onChange={(priority) => patch({ priority })} />
 
           <Field label="Due" htmlFor={personal ? 'td-due' : undefined}>
             {personal ? (
-              <div className="td-inline">
-                <input
-                  id="td-due"
-                  type="datetime-local"
-                  className="td-input"
-                  value={task.due ? format(new Date(task.due), "yyyy-MM-dd'T'HH:mm") : ''}
-                  onChange={(e) =>
-                    updateTask(id, { due: e.target.value ? new Date(e.target.value).toISOString() : undefined })
-                  }
-                />
-                {task.due && (
-                  <button className="icon-btn small" onClick={() => updateTask(id, { due: undefined })} aria-label="Clear due date">
-                    <Icon name="close" />
-                  </button>
-                )}
-              </div>
+              <DueInput id="td-due" value={task.due} onChange={(due) => updateTask(id, { due })} />
             ) : task.due ? (
               <p className={`td-static${dueLabel(task.due, now).overdue && task.status !== 'done' ? ' overdue' : ''}`}>
                 {format(new Date(task.due), 'EEEE, MMM d · h:mm a')}
@@ -219,111 +196,24 @@ function Drawer({ task, onDeleted }: { task: TaskView; onDeleted: (id: string, t
             )}
           </Field>
 
-          <Field label="Plan to work on" htmlFor="td-do">
-            <div className="td-inline td-wrap">
-              <input
-                id="td-do"
-                type="date"
-                className="td-input"
-                value={task.doDate ?? ''}
-                onChange={(e) => patch({ doDate: e.target.value || undefined })}
-              />
-              {[
-                ['Today', dayKey(now)],
-                ['Tomorrow', dayKey(addDays(now, 1))],
-              ].map(([label, key]) => (
-                <button
-                  key={label}
-                  className={`td-chip${task.doDate === key ? ' active' : ''}`}
-                  aria-pressed={task.doDate === key}
-                  onClick={() => patch({ doDate: task.doDate === key ? undefined : key })}
-                >
-                  {label}
-                </button>
-              ))}
-              {task.doDate && (
-                <button className="icon-btn small" onClick={() => patch({ doDate: undefined })} aria-label="Clear plan date">
-                  <Icon name="close" />
-                </button>
-              )}
-            </div>
-          </Field>
+          <DoDateField id="td-do" value={task.doDate} onChange={(doDate) => patch({ doDate })} />
 
-          <Field label="Schedule work time">
-            <ScheduleForm task={task} />
-          </Field>
-
-          <Field label="Estimate" htmlFor="td-est">
-            <div className="td-inline td-wrap">
-              <label className="td-est-input">
-                <input
-                  id="td-est"
-                  type="number"
-                  min={0}
-                  step={5}
-                  inputMode="numeric"
-                  className="td-input"
-                  value={task.estimateMin ?? ''}
-                  onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
-                    patch({ estimateMin: Number.isFinite(v) && v > 0 ? v : undefined });
-                  }}
-                />
-                <span>min</span>
-              </label>
-              {ESTIMATES.map((m) => (
-                <button
-                  key={m}
-                  className={`td-chip${task.estimateMin === m ? ' active' : ''}`}
-                  aria-pressed={task.estimateMin === m}
-                  onClick={() => patch({ estimateMin: task.estimateMin === m ? undefined : m })}
-                >
-                  {formatEstimate(m)}
-                </button>
-              ))}
-            </div>
-          </Field>
+          <EstimateField id="td-est" value={task.estimateMin} onChange={(estimateMin) => patch({ estimateMin })} />
 
           {personal && (
-            <Field label="Class" htmlFor="td-class">
-              <div className="td-inline td-wrap">
-                <select
-                  id="td-class"
-                  className="td-input"
-                  value={task.classId ?? ''}
-                  onChange={(e) => updateTask(id, { classId: e.target.value || undefined })}
-                >
-                  <option value="">No class</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <label className="td-switch">
-                  <input
-                    type="checkbox"
-                    checked={task.list === 'quick'}
-                    onChange={(e) => updateTask(id, { list: e.target.checked ? 'quick' : 'personal' })}
-                  />
-                  Quick item
-                </label>
-              </div>
-            </Field>
+            <ListField
+              id="td-class"
+              list={task.list === 'quick' ? 'quick' : 'personal'}
+              classId={task.classId}
+              onChange={(p) => updateTask(id, p)}
+            />
           )}
 
-          <Field label="Notes" htmlFor="td-notes">
-            <textarea
-              id="td-notes"
-              className="td-input td-notes"
-              rows={3}
-              placeholder="Add notes"
-              value={task.notes ?? ''}
-              onChange={(e) => patch({ notes: e.target.value || undefined })}
-            />
-          </Field>
+          <SubtaskEditor subtasks={task.subtasks} due={task.due} onChange={(subtasks) => patch({ subtasks })} />
 
-          <Subtasks task={task} />
+          <NotesField id="td-notes" value={task.notes} onChange={(notes) => patch({ notes })} />
+
+          <LegacyBlocks task={task} now={now} />
 
           {href && (
             <a className="filled-btn td-link" href={href} target="_blank" rel="noopener noreferrer">
@@ -363,126 +253,25 @@ function TitleInput({ id, title }: { id: string; title: string }) {
   );
 }
 
-function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: ReactNode }) {
+/** Work sessions scheduled before subtasks replaced them: still shown (and removable), no longer created here. */
+function LegacyBlocks({ task, now }: { task: TaskView; now: Date }) {
+  const upcoming = (task.blocks ?? []).filter((b) => Date.parse(b.start) + b.durationMin * 60_000 > now.getTime());
+  if (!upcoming.length) return null;
+  const remove = (blockId: string) =>
+    useStore.getState().updateTaskFields(task.ref, { blocks: (task.blocks ?? []).filter((b) => b.id !== blockId) });
   return (
-    <div className="td-field">
-      {htmlFor ? (
-        <label className="td-label" htmlFor={htmlFor}>
-          {label}
-        </label>
-      ) : (
-        <span className="td-label">{label}</span>
-      )}
-      {children}
-    </div>
-  );
-}
-
-function Segmented<T extends string>({
-  name,
-  value,
-  options,
-  onChange,
-}: {
-  name: string;
-  value: T;
-  options: { value: T; label: string; className?: string }[];
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div className="td-seg" role="radiogroup" aria-label={name}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          role="radio"
-          aria-checked={value === o.value}
-          className={`${o.className ?? ''}${value === o.value ? ' active' : ''}`}
-          onClick={() => onChange(o.value)}
-        >
-          {value === o.value && <Icon name="check" size={16} />}
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function Subtasks({ task }: { task: TaskView }) {
-  const updateTaskFields = useStore((s) => s.updateTaskFields);
-  const [draft, setDraft] = useState('');
-  const set = (subtasks: TaskView['subtasks']) => updateTaskFields(task.ref, { subtasks });
-  const done = task.subtasks.filter((s) => s.done).length;
-
-  const add = () => {
-    const title = draft.trim();
-    if (!title) return;
-    set([...task.subtasks, { id: newId(), title, done: false }]);
-    setDraft('');
-  };
-  const move = (i: number, dir: -1 | 1) => {
-    const next = [...task.subtasks];
-    [next[i], next[i + dir]] = [next[i + dir], next[i]];
-    set(next);
-  };
-
-  return (
-    <div className="td-field">
-      <span className="td-label">
-        Subtasks{task.subtasks.length > 0 && ` · ${done}/${task.subtasks.length}`}
-      </span>
-      {task.subtasks.length > 0 && (
-        <ul className="td-subtasks">
-          {task.subtasks.map((s, i) => (
-            <li key={s.id} className={s.done ? 'done' : undefined}>
-              <label className="td-sub-check">
-                <input
-                  type="checkbox"
-                  checked={s.done}
-                  onChange={() => set(task.subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)))}
-                />
-                <span>{s.title}</span>
-              </label>
-              <span className="td-sub-actions">
-                <button className="icon-btn small" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move "${s.title}" up`}>
-                  <Icon name="arrow_upward" />
-                </button>
-                <button
-                  className="icon-btn small"
-                  disabled={i === task.subtasks.length - 1}
-                  onClick={() => move(i, 1)}
-                  aria-label={`Move "${s.title}" down`}
-                >
-                  <Icon name="arrow_downward" />
-                </button>
-                <button
-                  className="icon-btn small"
-                  onClick={() => set(task.subtasks.filter((x) => x.id !== s.id))}
-                  aria-label={`Delete subtask "${s.title}"`}
-                >
-                  <Icon name="close" />
-                </button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="td-sub-add">
-        <Icon name="add" />
-        <input
-          type="text"
-          placeholder="Add a subtask"
-          aria-label="Add a subtask"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              add();
-            }
-          }}
-          onBlur={add}
-        />
-      </div>
-    </div>
+    <Field label="Scheduled work sessions">
+      <ul className="td-blocks">
+        {upcoming.map((b) => (
+          <li key={b.id}>
+            <Icon name="schedule" size={18} />
+            <span>{formatBlock(b)}</span>
+            <button className="icon-btn small" onClick={() => remove(b.id)} aria-label={`Remove ${formatBlock(b)}`}>
+              <Icon name="close" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Field>
   );
 }

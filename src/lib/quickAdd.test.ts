@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseQuickAdd } from './quickAdd';
+import { buildDraft, parseQuickAdd } from './quickAdd';
 import type { ClassInfo } from '../types';
 
 // Monday, Oct 26 2026, 2:00 PM local.
@@ -210,5 +210,43 @@ describe('parseQuickAdd', () => {
 
   it('empty input', () => {
     expect(parse('   ')).toEqual({ title: '', priority: 'none', list: 'personal' });
+  });
+});
+
+describe('buildDraft', () => {
+  it('typed tokens win over the picker', () => {
+    expect(buildDraft(parse('PA 3 fri #CSE110 !high'), 'class:math')).toMatchObject({
+      classId: 'cse',
+      priority: 'high',
+      list: 'personal',
+      due: local(2026, 9, 30),
+      subtasks: [],
+    });
+    expect(buildDraft(parse('Read'), 'class:math').classId).toBe('math');
+    expect(buildDraft(parse('Read'), 'quick')).toMatchObject({ list: 'quick', classId: undefined });
+    // A typed class beats the Quick picker; a typed "q" beats a picked class.
+    expect(buildDraft(parse('Read #CSE110'), 'quick')).toMatchObject({ list: 'personal', classId: 'cse' });
+    expect(buildDraft(parse('q Read'), 'class:math')).toMatchObject({ list: 'quick', classId: undefined });
+  });
+
+  it('form edits win over typed tokens, including clearing them', () => {
+    const d = buildDraft(parse('PA 3 fri #CSE110 ~2h'), 'personal', { due: undefined, classId: 'math', estimateMin: 45 });
+    expect(d.due).toBeUndefined();
+    expect(d.classId).toBe('math');
+    expect(d.estimateMin).toBe(45);
+    expect(buildDraft(parse('PA 3 #CSE110'), 'personal', { list: 'quick', classId: 'cse' }).classId).toBeUndefined();
+  });
+
+  it('works before anything is typed', () => {
+    expect(buildDraft(null, 'personal', { notes: 'n' })).toEqual({
+      due: undefined,
+      doDate: undefined,
+      classId: undefined,
+      priority: 'none',
+      estimateMin: undefined,
+      list: 'personal',
+      subtasks: [],
+      notes: 'n',
+    });
   });
 });

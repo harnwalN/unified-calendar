@@ -1,7 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The persisted store writes to localStorage, which isn't usable under every Node/jsdom combo.
+vi.hoisted(() => {
+  const data = new Map<string, string>();
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+      removeItem: (k: string) => void data.delete(k),
+    },
+  });
+});
 import type { CalEvent, ClassInfo, PersonalTask, TimeEntry } from '../types';
-import { migrateState } from './index';
-import { buildTaskViews, courseCode, findClassForCourse, isDeletedCourse, timeTotals } from './tasks';
+import { migrateState, useStore } from './index';
+import { buildTaskViews, courseCode, createClass, findClassForCourse, isDeletedCourse, timeTotals } from './tasks';
+import { PALETTE } from '../config';
 
 const cls = (id: string, aliases: string[], extra: Partial<ClassInfo> = {}): ClassInfo => ({
   id, name: id, color: '#000', aliases, order: 0, updatedAt: 1, ...extra,
@@ -92,5 +106,40 @@ describe('buildTaskViews', () => {
     expect(byRef['t:p'].list).toBe('personal');
     expect(byRef['t:q'].list).toBe('quick');
     expect(byRef['t:c']).toMatchObject({ list: 'class', classId: 'a' });
+  });
+});
+
+describe('createClass', () => {
+  it('reuses a live class with the same name and colors new ones from the palette', () => {
+    useStore.setState({ classes: { old: cls('old', [], { name: 'MATH 18', deleted: true }) } });
+    const a = createClass('  cse   110 ');
+    expect(useStore.getState().classes[a]).toMatchObject({ name: 'cse 110', color: PALETTE[0], aliases: [] });
+    expect(createClass('CSE 110')).toBe(a);
+    const b = createClass('Math 18', '#123456');
+    expect(b).not.toBe('old');
+    expect(useStore.getState().classes[b].color).toBe('#123456');
+    const c = createClass('Writing');
+    expect(useStore.getState().classes[c].color).toBe(PALETTE[2]);
+  });
+});
+
+describe('updateSubtask', () => {
+  it('patches one subtask on personal tasks and assignments', () => {
+    const subtasks = [
+      { id: 's1', title: 'one', done: false },
+      { id: 's2', title: 'two', done: false, doDate: '2026-10-27' },
+    ];
+    useStore.setState({ tasks: {}, meta: { hw: { uid: 'hw', status: 'todo', priority: 'none', subtasks, updatedAt: 1 } } });
+    const id = useStore.getState().addTask({ title: 'Test', subtasks });
+    useStore.getState().updateSubtask(`t:${id}`, 's2', { done: true });
+    useStore.getState().updateSubtask('a:hw', 's1', { doDate: '2026-10-28' });
+    const s = useStore.getState();
+    expect(s.tasks[id].subtasks.map((x) => x.done)).toEqual([false, true]);
+    expect(s.tasks[id].subtasks[1].doDate).toBe('2026-10-27');
+    expect(s.meta.hw.subtasks[0]).toEqual({ id: 's1', title: 'one', done: false, doDate: '2026-10-28' });
+    // Unknown ids are a no-op.
+    const before = s.meta.hw.updatedAt;
+    useStore.getState().updateSubtask('a:hw', 'nope', { done: true });
+    expect(useStore.getState().meta.hw.updatedAt).toBe(before);
   });
 });

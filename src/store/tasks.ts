@@ -42,6 +42,19 @@ export function isDeletedCourse(classes: Record<string, ClassInfo>, course: stri
   );
 }
 
+/**
+ * Create a class by name and return its id; a live class with the same name is reused.
+ * New classes take the next palette color unless one is given.
+ */
+export function createClass(name: string, color?: string): string {
+  const { classes, addClass } = useStore.getState();
+  const norm = normalizeCourse(name);
+  const live = Object.values(classes).filter((c) => !c.deleted);
+  const existing = live.find((c) => normalizeCourse(c.name) === norm);
+  if (existing) return existing.id;
+  return addClass({ name: name.trim().replace(/\s+/g, ' '), color: color ?? PALETTE[live.length % PALETTE.length], aliases: [] });
+}
+
 /** Live classes in display order. */
 export function useClasses(): ClassInfo[] {
   const classes = useStore((s) => s.classes);
