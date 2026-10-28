@@ -1,5 +1,12 @@
 .task-list { margin: 0; padding: 0; list-style: none; }
 
+/* Registered so the done share can transition. */
+@property --progress {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
 .task-row {
   position: relative;
   display: flex;
@@ -9,10 +16,22 @@
   padding: 6px 4px 6px 8px;
   border-radius: var(--radius-m);
   cursor: pointer;
-  transition: background-color .12s;
+  /* Reduced motion: app.css cuts every transition to ~0. */
+  transition: background-color .12s, --progress 600ms var(--ease-out-quint);
+  /* The background is a progress bar: green for the done share from the left (--progress),
+     the priority tint for the rest (--prio-tint, unset = none). Both are set inline from
+     progressVars() and sit over background-color, so hover/highlight still show through. */
+  background-image: linear-gradient(
+    to right,
+    var(--progress-tint) var(--progress),
+    var(--prio-tint, transparent) var(--progress)
+  );
+  /* Meta text stays AA over any tint. */
+  --text-3: var(--text-3-on-tint);
+  --success: var(--success-on-tint);
 }
-.task-row:hover { background: var(--surface-3); }
-.task-row:focus-within { background: var(--surface-2); }
+.task-row:hover { background-color: var(--surface-3); }
+.task-row:focus-within { background-color: var(--surface-2); }
 .task-row + .task-row::before {
   content: '';
   position: absolute;
@@ -22,8 +41,8 @@
   border-top: 1px solid var(--border-soft);
 }
 .task-row:hover::before, .task-row:hover + .task-row::before { opacity: 0; }
-.task-row.highlight { background: color-mix(in srgb, var(--primary-container) 55%, transparent); }
-.task-row.highlight:hover { background: var(--primary-container); }
+.task-row.highlight { background-color: color-mix(in srgb, var(--primary-container) 55%, transparent); }
+.task-row.highlight:hover { background-color: var(--primary-container); }
 .task-row.running { box-shadow: inset 3px 0 0 var(--task-color); }
 
 /* ---- status checkbox ---- */
