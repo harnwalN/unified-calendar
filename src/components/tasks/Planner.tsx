@@ -8,7 +8,9 @@ import type { ViewMode } from '../../types';
 import Icon from '../Icon';
 import { useNow } from '../hooks';
 import DayTrack, { HourAxis, openPlannerEvent, TrackedStrip } from './DayTrack';
-import DayPlan from './DayPlan';
+import DayPlan, { usePlanFrame, useToPlan } from './DayPlan';
+import type { Interval } from './planning';
+import { dayKey } from '../../store/tasks';
 import { formatDuration } from './format';
 import type { SubtaskItem } from './grouping';
 import { hourRange, pct } from './timeline';
@@ -120,10 +122,22 @@ export default function Planner() {
 const classMs = (d: DayData) => d.spans.reduce((sum, s) => sum + (s.className && !s.skipped ? s.end - s.start : 0), 0);
 const trackedMs = (d: DayData) => d.tracked.reduce((sum, s) => sum + (s.end - s.start), 0);
 
+/** Free gaps shorter than this stay off the bar (still counted, and reachable from the panel). */
+const MIN_BAR_SLOT = 30 * 60_000;
+
 function DayMode({ data, now }: { data: DayData; now: number }) {
   const isToday = now >= data.day && now < data.end;
   const [planning, setPlanning] = useState(false);
+  const [picked, setSlot] = useState<Interval | null>(null);
+  // A slot picked on another day doesn't carry over when you switch days.
+  const slot = picked && picked.start >= data.day && picked.start < data.end ? picked : null;
   const canPlan = data.end > now;
+  const frame = usePlanFrame(data, now);
+  const { toPlan } = useToPlan(dayKey(data.day), now);
+  const togglePlanning = () => {
+    setPlanning(!planning);
+    setSlot(null);
+  };
   const range = hourRange(data.spans, data.day, now);
   const at = (t: number) => pct(t, data.day, range);
   const tracked = trackedMs(data);
@@ -167,9 +181,14 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
         )}
         <span className="tb-status">{status}</span>
         {canPlan && (
-          <button className={`tb-plan${planning ? ' on' : ''}`} onClick={() => setPlanning(!planning)} aria-expanded={planning}>
-            <Icon name="event_note" size={16} />
-            {isToday ? 'Plan my day' : 'Plan this day'}
+          <button className={`tb-plan${planning ? ' on' : ''}`} onClick={togglePlanning} aria-expanded={planning}>
+            <Icon name={planning ? 'check' : 'edit_calendar'} size={18} />
+            {planning ? 'Done planning' : isToday ? 'Plan my day' : 'Plan this day'}
+            {!planning && toPlan.length > 0 && (
+              <span className="tb-plan-count" aria-label={`${toPlan.length} to schedule`}>
+                {toPlan.length}
+              </span>
+            )}
           </button>
         )}
         {isToday && (
@@ -188,10 +207,10 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
         </div>
       )}
       {data.subtasks.length > 0 && <PlannedSubtasks items={data.subtasks} />}
-      <DayTrack data={data} range={range} now={now} />
+      <DayTrack data={data} range={range} now={now} free={planning && canPlan ? frame.free.filter((f) => f.end - f.start >= MIN_BAR_SLOT) : undefined} picked={slot?.start} onPickFree={setSlot} />
       {data.tracked.length > 0 && <TrackedStrip data={data} at={at} />}
       <HourAxis day={data.day} range={range} />
-      {planning && canPlan && <DayPlan data={data} now={now} onClose={() => setPlanning(false)} />}
+      {planning && canPlan && <DayPlan data={data} now={now} frame={frame} slot={slot} onSlot={setSlot} onClose={togglePlanning} />}
     </div>
   );
 }

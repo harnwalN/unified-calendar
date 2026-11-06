@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { addDays, startOfDay } from 'date-fns';
 import { useStore } from '../../store';
 import { dayKey, useTasks } from '../../store/tasks';
-import { PLANNED_CALENDAR_ID, useVisibleEvents } from '../../store/selectors';
+import { PLANNED_CALENDAR_ID, plannedTaskRef, useVisibleEvents } from '../../store/selectors';
 import { useTaskLabeler } from '../../features/timer';
 import type { CalEvent, TaskRef, TaskView } from '../../types';
 import { useClassMatcher } from '../../features/classMeetings';
@@ -72,6 +72,12 @@ export function usePlannerData(now: number): (date: Date | number) => DayData {
     // Scheduled work keeps its green; everything else gets a varied per-event color.
     const colors = eventColors(timed.filter((t) => !t.planned).map((t) => ({ id: t.id, title: t.event.title, start: t.start, end: t.end })));
     for (const t of timed) {
+      // Planned sessions wear their task's class/topic color, so the plan reads at a glance.
+      const planRef = t.planned ? plannedTaskRef(t.id) : null;
+      if (planRef) {
+        t.color = label(planRef).color;
+        continue;
+      }
       // Class meetings wear their class color so lectures read as "CSE 110" at a glance.
       const m = t.planned ? null : match(t.event);
       t.color = m ? m.cls.color : (colors.get(t.id) ?? t.color);

@@ -8,6 +8,8 @@ import { sunTimes } from '../../lib/sun';
 import type { CalEvent } from '../../types';
 import Icon from '../Icon';
 import { useSunLocation } from '../scenery/sky';
+import { formatDuration } from './format';
+import type { Interval } from './planning';
 import { assignLanes, inkFor, pct } from './timeline';
 import type { DayData } from './usePlannerData';
 
@@ -24,12 +26,19 @@ export default function DayTrack({
   range,
   now,
   compact = false,
+  free,
+  picked,
+  onPickFree,
 }: {
   data: DayData;
   range: [number, number];
   now: number;
   /** Week rows: thinner lanes, tracked time inside the track, no deadline flags' labels. */
   compact?: boolean;
+  /** While planning: free stretches to show as clickable "+" slots. */
+  free?: Interval[];
+  picked?: number | null;
+  onPickFree?: (slot: Interval) => void;
 }) {
   const { day, end } = data;
   const at = (t: number) => pct(t, day, range);
@@ -57,6 +66,23 @@ export default function DayTrack({
       ))}
       {past > 0 && <span className="tb-past" style={{ width: `${past}%` }} />}
 
+      {free?.map((f) => {
+        const width = at(f.end) - at(f.start);
+        return (
+          <button
+            key={f.start}
+            className={`tb-free${picked === f.start ? ' picked' : ''}`}
+            style={{ left: `${at(f.start)}%`, width: `${width}%` }}
+            onClick={() => onPickFree?.(f)}
+            title={`Free ${format(f.start, 'h:mm')}–${format(f.end, 'h:mm a')} · click to fill`}
+            aria-label={`Fill free time ${format(f.start, 'h:mm a')} to ${format(f.end, 'h:mm a')}`}
+          >
+            <Icon name="add" size={14} />
+            {width > 7 && <span>{formatDuration(f.end - f.start)}</span>}
+          </button>
+        );
+      })}
+
       {lanes.map(({ span: s, lane }, i) => (
         <button
           key={s.id}
@@ -75,6 +101,7 @@ export default function DayTrack({
           title={`${s.event.title} · ${format(s.start, 'h:mm')}–${format(s.end, 'h:mm a')}${s.planned ? ' (scheduled work)' : s.className ? ` (${s.className} class${s.skipped ? ', not attending' : ''})` : ''}`}
         >
           {s.className && <Icon name="school" size={compact ? 11 : 13} className="tb-event-icon" />}
+          {s.planned && !compact && <Icon name="event_available" size={13} className="tb-event-icon" />}
           <span>{s.event.title}</span>
         </button>
       ))}
