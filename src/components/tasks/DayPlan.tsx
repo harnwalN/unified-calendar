@@ -1,10 +1,12 @@
 // "Plan my day": put the day's tasks and subtasks into time slots (WorkBlocks), let the app fit
-// them into free time around events, and add your own blocks ("Gym", "Lunch"…).
-import { useMemo, useState, type CSSProperties } from 'react';
+// them into free time around events, add your own blocks ("Gym", "Lunch"…), and say which of the
+// day's classes you're attending.
+import { useCallback, useMemo, useState, type CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { newId, taskRef, useStore } from '../../store';
 import { dayKey, useTasks } from '../../store/tasks';
 import type { TaskRef, TaskView, WorkBlock } from '../../types';
+import { setMeetingSkipped, useClassMatcher } from '../../features/classMeetings';
 import ClassSelect from '../ClassSelect';
 import Icon from '../Icon';
 import { formatDuration } from './format';
@@ -14,10 +16,38 @@ import { autoPlan, blocksOnDay, freeMinutesIn, nextFreeStart, PLAN_DURATIONS, pl
 import type { EventSpan } from './usePlannerData';
 import './DayPlan.css';
 
-const H = 3_600_000;
-/** The part of the day "Fit into free time" fills. */
-const DAY_FROM_H = 8;
-const DAY_UNTIL_H = 22;
+/** The part of the day suggestions and "Fit into free time" use; editable, remembered per device. */
+interface PlanWindow {
+  from: string;
+  until: string;
+}
+const WINDOW_KEY = 'day-plan:window';
+const DEFAULT_WINDOW: PlanWindow = { from: '08:00', until: '22:00' };
+const isHhmm = (v: unknown): v is string => typeof v === 'string' && /^\d{2}:\d{2}$/.test(v);
+
+function usePlanWindow(): [PlanWindow, (patch: Partial<PlanWindow>) => void] {
+  const [win, setWin] = useState<PlanWindow>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WINDOW_KEY) ?? 'null') as Partial<PlanWindow> | null;
+      if (saved && isHhmm(saved.from) && isHhmm(saved.until)) return { from: saved.from, until: saved.until };
+    } catch {
+      // Unreadable or blocked storage: use the default.
+    }
+    return DEFAULT_WINDOW;
+  });
+  const update = useCallback((patch: Partial<PlanWindow>) => {
+    setWin((w) => {
+      const next = { ...w, ...patch };
+      try {
+        localStorage.setItem(WINDOW_KEY, JSON.stringify(next));
+      } catch {
+        // Storage unavailable: keep it for this session only.
+      }
+      return next;
+    });
+  }, []);
+  return [win, update];
+}
 
 const toTime = (ms: number) => format(ms, 'HH:mm');
 function atTime(day: number, hhmm: string): number {
@@ -47,9 +77,14 @@ export default function DayPlan({ data, now, onClose }: { data: DayData; now: nu
   const isToday = now >= data.day && now < data.end;
   const [extra, setExtra] = useState<string[]>([]);
   const [fitMsg, setFitMsg] = useState('');
+  const [win, setWin] = usePlanWindow();
+  const match = useClassMatcher();
 
-  const from = Math.max(data.day + DAY_FROM_H * H, isToday ? now : 0);
-  const until = Math.max(from, data.day + DAY_UNTIL_H * H);
+  // Suggestions never land in the past; an end at or before the start means "until midnight".
+  const winFrom = atTime(data.day, win.from);
+  const winUntil = win.until > win.from ? atTime(data.day, win.until) : data.end;
+  const from = Math.max(winFrom, isToday ? now : 0);
+  const until = Math.max(from, winUntil);
   // Events you're attending and sessions already planned take up time.
   const busy: Interval[] = useMemo(() => data.spans.filter((s) => !s.skipped).map((s) => ({ start: s.start, end: s.end })), [data.spans]);
 
@@ -68,13 +103,13 @@ export default function DayPlan({ data, now, onClose }: { data: DayData; now: nu
     };
   }, [tasks, day, now, extra]);
 
-  const sessions = useMemo(
-    () =>
-      tasks
-        .flatMap((t) => blocksOnDay(t, day).map((b) => ({ task: t, block: b })))
-        .sort((a, b) => a.block.start.localeCompare(b.block.start)),
-    [tasks, day],
-  );
+  // Work sessions and the day's class meetings, in time order.
+  const agenda = useMemo(() => {
+    const items: ({ kind: 'session'; at: number; task: TaskView; block: WorkBlock } | { kind: 'class'; at: number; span: EventSpan })[] = [];
+    for (const t of tasks) for (const b of blocksOnDay(t, day)) items.push({ kind: 'session', at: Date.parse(b.start), task: t, block: b });
+    for (const s of data.spans) if (!s.planned && s.className) items.push({ kind: 'class', at: Date.parse(s.event.start), span: s });
+    return items.sort((a, b) => a.at - b.at);
+  }, [tasks, day, data.spans]);
 
   const free = freeMinutesIn(busy, from, until);
   const fit = () => {
@@ -97,9 +132,21 @@ export default function DayPlan({ data, now, onClose }: { data: DayData; now: nu
         <h3>
           <Icon name="event_note" size={18} /> Plan {label}
         </h3>
-        <span className="dp-free">
-          {free > 0 ? `${formatDuration(free * 60_000)} free` : 'No free time left'} until {format(until, 'h a')}
+        <span className="dp-window">
+          <label>
+            <span className="sr-only">Plan from</span>
+            <input type="time" className="dp-time" value={win.from} onChange={(e) => e.target.value && setWin({ from: e.target.value })} />
+          </label>
+          <span aria-hidden="true">–</span>
+          <label>
+            <span className="sr-only">Plan until</span>
+            <input type="time" className="dp-time" value={win.until} onChange={(e) => e.target.value && setWin({ until: e.target.value })} />
+          </label>
+          <button className="dp-allday" onClick={() => setWin({ from: '00:00', until: '00:00' })} title="Plan the whole day, midnight to midnight">
+            All day
+          </button>
         </span>
+        <span className="dp-free">{free > 0 ? `${formatDuration(free * 60_000)} free` : 'No free time left'}</span>
         <button className="dp-fit" onClick={fit} disabled={!toPlan.length || free <= 0} title="Put each unscheduled item into the next free slot">
           <Icon name="auto_awesome" size={16} /> Fit into free time
         </button>
@@ -144,11 +191,15 @@ export default function DayPlan({ data, now, onClose }: { data: DayData; now: nu
 
         <div className="dp-col">
           <h4>Scheduled</h4>
-          {sessions.length ? (
+          {agenda.length ? (
             <ul className="dp-list">
-              {sessions.map(({ task, block }) => (
-                <SessionRow key={block.id} task={task} block={block} day={data.day} spans={data.spans} />
-              ))}
+              {agenda.map((a) =>
+                a.kind === 'session' ? (
+                  <SessionRow key={a.block.id} task={a.task} block={a.block} day={data.day} spans={data.spans} />
+                ) : (
+                  <ClassMeetingRow key={a.span.id} span={a.span} classId={match(a.span.event)?.cls.id} />
+                ),
+              )}
             </ul>
           ) : (
             <p className="dp-none">Nothing yet. Pick times on the left, or let the app fit them in.</p>
@@ -191,7 +242,7 @@ function PlanRow({ item, day, busy, from, until }: { item: PlanItem; day: number
         <span>{item.title}</span>
         {item.subtaskId && <small>↳ {item.task.title}</small>}
       </span>
-      <input type="time" className="dp-time" step={900} value={value} aria-label={`Start time for ${item.title}`} onChange={(e) => setTime(e.target.value || null)} />
+      <input type="time" className="dp-time" value={value} aria-label={`Start time for ${item.title}`} onChange={(e) => setTime(e.target.value || null)} />
       <DurationSelect value={minutes} onChange={setMinutes} label={`Length of ${item.title}`} />
       <button className="dp-add" onClick={schedule} aria-label={`Schedule ${item.title}`} title="Schedule">
         <Icon name="add" size={18} />
@@ -223,7 +274,7 @@ function SessionRow({ task, block, day, spans }: { task: TaskView; block: WorkBl
       <input
         type="time"
         className="dp-time"
-        step={900}
+       
         value={toTime(Date.parse(block.start))}
         aria-label={`Start time for ${title}`}
         onChange={(e) => e.target.value && patchBlock(task.ref, block.id, { start: new Date(atTime(day, e.target.value)).toISOString() })}
@@ -267,12 +318,36 @@ function AddBlock({ day, dayKeyStr, busy, from, until }: { day: number; dayKeySt
       <input className="dp-block-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add a block, e.g. Gym, Lunch, Reading" aria-label="New block title" maxLength={80} />
       <div className="dp-block-line">
         <ClassSelect className="dp-block-class" label="Class or topic for the block" value={classId} onChange={setClassId} allowNone noneLabel="No class/topic" />
-        <input type="time" className="dp-time" step={900} value={value} aria-label="Start time for the new block" onChange={(e) => setTime(e.target.value || null)} />
+        <input type="time" className="dp-time" value={value} aria-label="Start time for the new block" onChange={(e) => setTime(e.target.value || null)} />
         <DurationSelect value={minutes} onChange={setMinutes} label="Length of the new block" />
         <button type="submit" className="dp-add" disabled={!title.trim()} aria-label="Add block" title="Add block">
           <Icon name="add" size={18} />
         </button>
       </div>
     </form>
+  );
+}
+
+/** A class meeting on the day, with whether you're going (unchecking marks just this one "Not attending"). */
+function ClassMeetingRow({ span, classId }: { span: EventSpan; classId?: string }) {
+  const attending = !span.skipped;
+  const { event } = span;
+  return (
+    <li className={`dp-row dp-class${attending ? '' : ' skipped'}`} style={{ '--task-color': span.color } as CSSProperties}>
+      <Icon name="school" size={16} className="dp-class-icon" />
+      <span className="dp-title">
+        <span>{event.title}</span>
+        <small>
+          {span.className} · {format(Date.parse(event.start), 'h:mm')}–{format(Date.parse(event.end), 'h:mm a')}
+          {!attending && ' · not attending'}
+        </small>
+      </span>
+      {classId && (
+        <label className="dp-attend">
+          <input type="checkbox" checked={attending} onChange={() => setMeetingSkipped(classId, event, attending)} />
+          Attending
+        </label>
+      )}
+    </li>
   );
 }

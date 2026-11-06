@@ -16,6 +16,12 @@
 }
 .dp-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
 .dp-head h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-family: var(--font); font-size: 15px; font-weight: 500; }
+.dp-window { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-3); }
+.dp-allday {
+  height: 26px; padding: 0 8px; border: 1px solid var(--border-soft); border-radius: 13px;
+  background: none; color: var(--text-2); font-size: 12px; cursor: pointer;
+}
+.dp-allday:hover { background: var(--surface-3); }
 .dp-free { flex: 1; min-width: 0; font-size: 12px; color: var(--text-3); white-space: nowrap; }
 .dp-fit {
   display: inline-flex; align-items: center; gap: 4px;
@@ -58,3 +64,7 @@
 .dp-block-line { display: flex; align-items: center; gap: 6px; }
 .dp-block-line .dp-block-class, .dp-block-line .class-new { flex: 1; min-width: 0; }
 .dp-clash { color: var(--warning, #b06000); }
+.dp-class-icon { flex: none; color: var(--task-color); }
+.dp-class.skipped .dp-title > span { text-decoration: line-through; color: var(--text-3); }
+.dp-attend { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+.dp-attend input { width: 16px; height: 16px; margin: 0; accent-color: var(--task-color); cursor: pointer; }
