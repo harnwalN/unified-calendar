@@ -272,6 +272,8 @@ function TodayList({ now }: { now: Date }) {
 
 function MiniRow({ task: t, now, color, timing, liveMs }: { task: TaskView; now: Date; color: string; timing: boolean; liveMs: number }) {
   const due = t.due ? dueLabel(t.due, now) : null;
+  // Today's next scheduled time (Plan my day), like the "Today 7:15 PM" chip on the app's rows.
+  const at = t.blocks?.find((b) => dayKey(b.start) === dayKey(now) && Date.parse(b.start) + b.durationMin * 60_000 > now.getTime());
   const done = t.status === 'done';
   return (
     <li className={`mini-row${timing ? ' timing' : ''}`} style={{ '--task-color': color, ...progressVars(t, liveMs) } as CSSProperties}>
@@ -286,7 +288,13 @@ function MiniRow({ task: t, now, color, timing, liveMs }: { task: TaskView; now:
       </button>
       <span className="mini-row-text">
         <span className="mini-row-title">{t.title}</span>
-        {due && <span className={`mini-row-due${due.overdue ? ' overdue' : ''}`}>{due.text}</span>}
+        {(at || due) && (
+          <span className={`mini-row-due${due?.overdue ? ' overdue' : ''}`}>
+            {at && <span className="mini-row-at">{format(new Date(at.start), 'h:mm a')}</span>}
+            {at && due && ' · '}
+            {due?.text}
+          </span>
+        )}
       </span>
       <button
         className="icon-btn small mini-play"

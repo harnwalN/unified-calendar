@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { doneMap, useStore } from '../store';
+import { doneMap, taskRef, useStore } from '../store';
 import { useAllEvents } from '../store/selectors';
-import type { CalEvent } from '../types';
+import type { CalEvent, ClassInfo, PersonalTask, TaskRef } from '../types';
 
 export const FIRED_KEY = 'unified-calendar-fired';
 const HOUR_MS = 60 * 60 * 1000;
@@ -81,6 +81,21 @@ export function readFired(now = Date.now()): Record<string, number> {
   }
 }
 
+/**
+ * Personal tasks with a deadline, shaped like assignments so they get the same reminders. Their
+ * `uid` is the task ref (`t:<id>`), which also tells `notify` to open the task.
+ */
+export function personalDeadlines(tasks: Record<string, PersonalTask>, classes: Record<string, ClassInfo>): CalEvent[] {
+  const out: CalEvent[] = [];
+  for (const t of Object.values(tasks)) {
+    if (t.deleted || t.status === 'done' || !t.due) continue;
+    const ref = taskRef.personal(t.id);
+    const cls = t.classId ? classes[t.classId] : undefined;
+    out.push({ id: ref, uid: ref, calendarId: 'personal', title: t.title, start: t.due, end: t.due, allDay: false, kind: 'assignment', course: cls && !cls.deleted ? cls.name : undefined });
+  }
+  return out;
+}
+
 /** Returns false if this key was already fired (e.g. by another tab or a StrictMode double-run). */
 function markFired(key: string): boolean {
   const fired = readFired();
@@ -106,8 +121,10 @@ function notify({ key, event, offsetMin }: PlannedReminder) {
     const n = new Notification(event.title, options);
     n.onclick = () => {
       window.focus();
-      useStore.getState().selectEvent(event.id);
-      useStore.getState().setCursor(new Date(event.start));
+      const s = useStore.getState();
+      if (event.uid.startsWith('t:')) s.selectTask(event.uid as TaskRef);
+      else s.selectEvent(event.id);
+      s.setCursor(new Date(event.start));
     };
   };
   // Service-worker notifications also work for installed PWAs on mobile, where `new Notification` throws.
@@ -126,9 +143,12 @@ export function notificationsSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
 }
 
-/** Mount once in <App/>: schedules browser notifications for upcoming assignments. */
+/** Mount once in <App/>: schedules browser notifications for upcoming assignments and personal deadlines. */
 export function useReminders(): void {
-  const events = useAllEvents();
+  const feedEvents = useAllEvents();
+  const tasks = useStore((s) => s.tasks);
+  const classes = useStore((s) => s.classes);
+  const events = useMemo(() => [...feedEvents, ...personalDeadlines(tasks, classes)], [feedEvents, tasks, classes]);
   const meta = useStore((s) => s.meta);
   const done = useMemo(() => doneMap(meta), [meta]);
   const enabled = useStore((s) => s.settings.remindersEnabled);

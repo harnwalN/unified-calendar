@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeOffset, planReminders, reminderBody } from './reminders';
+import { describeOffset, personalDeadlines, planReminders, reminderBody } from './reminders';
 import type { CalEvent } from '../types';
 
 const MIN = 60000;
@@ -62,5 +62,23 @@ describe('reminder text', () => {
   it('builds the body with the course', () => {
     expect(reminderBody(assignment('a', 60), 60)).toBe('CSE 110 · due in 1 hour');
     expect(reminderBody(assignment('a', 60, { course: undefined }), 15)).toBe('Due in 15 minutes');
+  });
+});
+
+describe('personalDeadlines', () => {
+  it('turns open personal tasks with a due date into reminder items, with their class name', () => {
+    const base = { list: 'personal' as const, priority: 'none' as const, subtasks: [], createdAt: 0, updatedAt: 0 };
+    const tasks = {
+      a: { ...base, id: 'a', title: 'Lab report', status: 'todo' as const, due: '2026-11-06T20:00:00.000Z', classId: 'c' },
+      b: { ...base, id: 'b', title: 'Done thing', status: 'done' as const, due: '2026-11-06T20:00:00.000Z' },
+      c: { ...base, id: 'c', title: 'No date', status: 'todo' as const },
+      d: { ...base, id: 'd', title: 'Gone', status: 'todo' as const, due: '2026-11-06T20:00:00.000Z', deleted: true },
+    };
+    const classes = { c: { id: 'c', name: 'Physics 1A', color: '#000', aliases: [], order: 0, updatedAt: 0 } };
+    const out = personalDeadlines(tasks, classes);
+    expect(out).toEqual([
+      expect.objectContaining({ uid: 't:a', title: 'Lab report', kind: 'assignment', start: '2026-11-06T20:00:00.000Z', course: 'Physics 1A' }),
+    ]);
+    expect(planReminders(out, {}, [60], Date.parse('2026-11-06T18:30:00.000Z'), {}).map((r) => r.key)).toEqual(['t:a:60']);
   });
 });

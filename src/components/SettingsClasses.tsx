@@ -53,6 +53,10 @@ function ClassMenu({ cls, onClose, onRename, onMerge, canMerge }: {
       {item(cls.hidden ? 'visibility' : 'visibility_off', cls.hidden ? 'Show on home' : 'Hide from home', () =>
         updateClass(cls.id, { hidden: !cls.hidden }),
       )}
+      {!cls.aliases.length &&
+        item(isTopic(cls) ? 'school' : 'label', isTopic(cls) ? 'Make it a class' : 'Make it a topic', () =>
+          updateClass(cls.id, { kind: isTopic(cls) ? 'class' : 'topic' }),
+        )}
       {canMerge && item('call_merge', 'Merge into…', onMerge)}
       {item('delete', 'Delete', () => {
         const msg = cls.aliases.length

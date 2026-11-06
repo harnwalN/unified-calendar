@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { useStore } from '../../store';
 import { dayKey, useClasses } from '../../store/tasks';
-import { toggleTimer, useRunningElapsed } from '../../features/timer';
+import { GROUP_COLORS, toggleTimer, useRunningElapsed } from '../../features/timer';
 import type { Priority, TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
 import { doDateLabel, dueLabel, formatDuration, formatEstimate } from './format';
@@ -15,13 +15,13 @@ const LONG_PRESS_MS = 500;
 export const PRIORITY_LABEL: Record<Priority, string> = { none: 'No priority', low: 'Low', medium: 'Medium', high: 'High' };
 export const STATUS_LABEL: Record<TaskStatus, string> = { todo: 'Not started', doing: 'In progress', done: 'Done' };
 
-/** Class color, else the calendar color, else the theme primary. */
-export function useTaskColor(task: Pick<TaskView, 'classId' | 'calendarId'>): string {
+/** Class/topic color, else the calendar color, else the Personal / Quick color (same as the timer and Time stats). */
+export function useTaskColor(task: Pick<TaskView, 'classId' | 'calendarId'> & { list?: TaskView['list'] }): string {
   return useStore(
     (s) =>
       (task.classId && s.classes[task.classId]?.color) ||
       (task.calendarId && s.calendars[task.calendarId]?.color) ||
-      'var(--primary)',
+      (task.list === 'quick' ? GROUP_COLORS.quick : GROUP_COLORS.personal),
   );
 }
 

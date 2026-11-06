@@ -239,3 +239,5 @@
   border-radius: var(--radius-l); background: var(--primary-container); color: var(--on-primary-container); font-size: 13px;
 }
 .th-search span { flex: 1; min-width: 0; }
+.th-add { flex: none; color: var(--text-3); }
+.th-add:hover { color: var(--text); }

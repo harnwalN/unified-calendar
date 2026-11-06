@@ -330,7 +330,15 @@ function WeekMode({ cursor, now, weekStartsOn, dayData, onPick }: RangeProps & {
               <span className="pl-week-num">{format(d, 'd')}</span>
             </button>
             <DayTrack data={data} range={range} now={now} compact />
-            <span className="pl-week-sum">{trackedMs(data) >= 60_000 ? formatDuration(trackedMs(data)) : ''}</span>
+            <span className="pl-week-sum" title="Time tracked that day">
+              {trackedMs(data) >= 60_000 ? (
+                <>
+                  <Icon name="timer" size={13} /> {formatDuration(trackedMs(data))}
+                </>
+              ) : (
+                ''
+              )}
+            </span>
           </div>
         );
       })}

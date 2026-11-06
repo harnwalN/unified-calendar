@@ -107,3 +107,4 @@ body.floating-body { margin: 0; background: var(--bg); color: var(--text); font-
   display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
   border: 0; border-radius: 50%; background: var(--primary); color: var(--on-primary); cursor: pointer;
 }
+.mini-row-at { color: var(--success-on-tint, var(--success)); font-weight: 500; }

@@ -31,7 +31,7 @@ export default function SettingsReminders() {
       <label className="s-switch-row">
         <div className="s-switch-row__text">
           <div className="s-switch-row__title">Assignment reminders</div>
-          <div className="s-switch-row__sub">Get a notification before Canvas assignments are due.</div>
+          <div className="s-switch-row__sub">Get a notification before assignments and your own tasks are due.</div>
         </div>
         <button
           type="button"
@@ -75,7 +75,7 @@ export default function SettingsReminders() {
       <div className="s-note">
         <Icon name="info" />
         <span>
-          Reminders fire while the app is open in a tab or installed as an app. Checked-off assignments don’t remind you.
+          Reminders fire while the app is open in a tab or installed as an app. Finished tasks don’t remind you.
         </span>
       </div>
     </div>

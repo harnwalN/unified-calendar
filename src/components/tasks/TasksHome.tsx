@@ -14,7 +14,8 @@ import { formatEstimate, greeting } from './format';
 import { useCollapsedSections, useHomeSections } from './useHomeData';
 import TaskRow from './TaskRow';
 import { SubtaskList, SubtaskTodayRow } from './SubtaskRows';
-import QuickAdd from './QuickAdd';
+import QuickAdd, { openQuickAdd } from './QuickAdd';
+import type { AddTarget } from '../../lib/quickAdd';
 import Planner from './Planner';
 import './TasksHome.css';
 
@@ -118,6 +119,7 @@ export default function TasksHome() {
                 id="personal"
                 title="Personal"
                 icon="person"
+                addTo="personal"
                 count={personal.open.length}
                 collapsed={collapsed.personal}
                 onToggle={toggle}
@@ -195,10 +197,12 @@ interface SectionProps {
   onToggle: (id: string) => void;
   /** When set, the title can be renamed inline (pencil button or double-click). */
   onRename?: (name: string) => void;
+  /** Quick-add target for this section's "+" (e.g. `class:<id>`, 'personal', 'quick'). */
+  addTo?: AddTarget;
   children: ReactNode;
 }
 
-function Section({ id, title, icon, color, count, extra, collapsed, onToggle, onRename, children }: SectionProps) {
+function Section({ id, title, icon, color, count, extra, collapsed, onToggle, onRename, addTo, children }: SectionProps) {
   const bodyId = `section-body-${id}`;
   const [editing, setEditing] = useState(false);
   return (
@@ -236,6 +240,16 @@ function Section({ id, title, icon, color, count, extra, collapsed, onToggle, on
           </button>
         )}
         {extra}
+        {addTo && (
+          <button
+            className="icon-btn small th-add"
+            onClick={() => openQuickAdd('', { target: addTo, expand: false })}
+            aria-label={`Add a task to ${typeof title === 'string' ? title : id === 'quick' ? 'Quick items' : id}`}
+            title="Add a task here"
+          >
+            <Icon name="add" />
+          </button>
+        )}
       </header>
       {!collapsed && (
         <div className="th-section-body" id={bodyId}>
@@ -377,6 +391,7 @@ function ClassBlock({
       collapsed={collapsed[id]}
       onToggle={onToggle}
       onRename={isClass ? (name) => useStore.getState().updateClass(c.id, { name }) : undefined}
+      addTo={isClass ? `class:${c.id}` : undefined}
     >
       <GroupBody
         group={c}
@@ -419,6 +434,7 @@ function QuickSection({
         </>
       }
       icon="bolt"
+      addTo="quick"
       count={group.open.length}
       collapsed={collapsed.quick}
       onToggle={onToggle}

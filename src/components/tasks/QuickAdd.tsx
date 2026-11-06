@@ -13,11 +13,20 @@ export const QUICK_ADD_ID = 'quick-add-input';
 const FORM_ID = 'quick-add-form';
 const OPEN_EVENT = 'quick-add:open';
 
-/** Open the full add form in the main tab, pre-filled with typed text (used by the mini window). */
-export function openQuickAdd(text = '') {
+interface OpenRequest {
+  text: string;
+  target?: AddTarget;
+  expand: boolean;
+}
+
+/**
+ * Focus the add bar in the main tab: pre-filled with typed text and the full form (the mini window's
+ * "More options"), or aimed at a list (a section's "+").
+ */
+export function openQuickAdd(text = '', { target, expand = true }: { target?: AddTarget; expand?: boolean } = {}) {
   useStore.getState().setTimePageOpen(false);
   window.focus();
-  window.dispatchEvent(new CustomEvent<string>(OPEN_EVENT, { detail: text }));
+  window.dispatchEvent(new CustomEvent<OpenRequest>(OPEN_EVENT, { detail: { text, target, expand } }));
 }
 
 export default function QuickAdd() {
@@ -38,9 +47,11 @@ export default function QuickAdd() {
 
   useEffect(() => {
     const open = (e: Event) => {
-      setText((e as CustomEvent<string>).detail);
+      const req = (e as CustomEvent<OpenRequest>).detail;
+      setText(req.text);
       setEdits({});
-      setExpanded(true);
+      if (req.target) setTarget(req.target);
+      setExpanded(req.expand);
       inputRef.current?.scrollIntoView({ block: 'center' });
       inputRef.current?.focus();
     };
