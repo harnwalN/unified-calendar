@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { useStore } from '../../store';
-import { useClasses } from '../../store/tasks';
+import { isTopic, useClasses } from '../../store/tasks';
 import { buildDraft, parseQuickAdd, type AddTarget, type TaskDraft } from '../../lib/quickAdd';
 import Icon from '../Icon';
 import { doDateLabel, formatEstimate } from './format';
@@ -106,9 +106,18 @@ export default function QuickAdd() {
             >
               <option value="personal">Personal</option>
               <option value="quick">Quick items</option>
-              {classes.length > 0 && (
+              {classes.some((c) => !isTopic(c)) && (
                 <optgroup label="Classes">
-                  {classes.map((c) => (
+                  {classes.filter((c) => !isTopic(c)).map((c) => (
+                    <option key={c.id} value={`class:${c.id}`}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {classes.some(isTopic) && (
+                <optgroup label="Topics">
+                  {classes.filter(isTopic).map((c) => (
                     <option key={c.id} value={`class:${c.id}`}>
                       {c.name}
                     </option>

@@ -67,14 +67,18 @@ export function plannedEvents(
   tasks: Record<string, PersonalTask>,
 ): CalEvent[] {
   const out: CalEvent[] = [];
-  const add = (ref: TaskRef, title: string, blocks: TaskMeta['blocks'], done: boolean) => {
-    for (const b of blocks ?? []) {
+  const add = (ref: TaskRef, title: string, fields: Pick<TaskMeta, 'blocks' | 'subtasks'>, done: boolean) => {
+    for (const b of fields.blocks ?? []) {
       const id = `${PLAN_PREFIX}${ref}:${b.id}`;
+      // A subtask's session shows the subtask; one whose subtask was deleted falls back to the task.
+      const sub = b.subtaskId ? fields.subtasks?.find((s) => s.id === b.subtaskId) : undefined;
+      const finished = done || !!sub?.done;
+      const label = sub ? sub.title : title;
       out.push({
         id,
         uid: id,
         calendarId: PLANNED_CALENDAR_ID,
-        title: done ? `✓ ${title}` : title,
+        title: finished ? `✓ ${label}` : label,
         start: b.start,
         end: new Date(Date.parse(b.start) + b.durationMin * 60_000).toISOString(),
         allDay: false,
@@ -85,10 +89,10 @@ export function plannedEvents(
   const titles = new Map(events.filter((e) => e.kind === 'assignment').map((e) => [e.uid, e.title]));
   for (const m of Object.values(meta)) {
     const title = titles.get(m.uid);
-    if (!m.deleted && m.blocks?.length && title) add(`a:${m.uid}`, title, m.blocks, m.status === 'done');
+    if (!m.deleted && m.blocks?.length && title) add(`a:${m.uid}`, title, m, m.status === 'done');
   }
   for (const t of Object.values(tasks)) {
-    if (!t.deleted && t.blocks?.length) add(`t:${t.id}`, t.title, t.blocks, t.status === 'done');
+    if (!t.deleted && t.blocks?.length) add(`t:${t.id}`, t.title, t, t.status === 'done');
   }
   return out;
 }

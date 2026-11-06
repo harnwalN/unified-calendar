@@ -54,14 +54,16 @@ export function nextClassColor(classes: Record<string, ClassInfo>): string {
  * Add a class by hand (for courses without Canvas/PrairieLearn assignments) and return its id.
  * Reuses a live class with the same name instead of making a duplicate. Blank names return ''.
  */
-export function createClass(name: string, color?: string): string {
+export function createClass(name: string, color?: string, kind: 'class' | 'topic' = 'class'): string {
   const clean = name.trim().replace(/\s+/g, ' ');
   if (!clean) return '';
   const { classes, addClass } = useStore.getState();
   const existing = findClassByName(classes, clean);
   if (existing) return existing.id;
-  return addClass({ name: clean, color: color ?? nextClassColor(classes), aliases: [], manual: true });
+  return addClass({ name: clean, color: color ?? nextClassColor(classes), aliases: [], manual: true, ...(kind === 'topic' && { kind }) });
 }
+
+export const isTopic = (c: Pick<ClassInfo, 'kind'>) => c.kind === 'topic';
 
 /** True when the user deleted the class this course belonged to (so it isn't auto-created again). */
 export function isDeletedCourse(classes: Record<string, ClassInfo>, course: string): boolean {

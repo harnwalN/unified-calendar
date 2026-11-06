@@ -34,7 +34,7 @@ const SECTIONS: Section[] = [
     body: <SettingsDriveSync />,
   },
   {
-    id: 'classes', label: 'Classes', icon: 'class',
+    id: 'classes', label: 'Classes & topics', icon: 'class',
     description: 'How your assignments and tasks are grouped on the home screen.',
     body: <SettingsClasses />,
   },

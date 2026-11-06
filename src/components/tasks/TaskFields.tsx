@@ -5,6 +5,7 @@ import { addDays, format } from 'date-fns';
 import { newId } from '../../store';
 import { createClass, dayKey, useClasses } from '../../store/tasks';
 import type { Priority, Subtask } from '../../types';
+import ClassOptions, { newKindOf } from '../ClassOptions';
 import Icon from '../Icon';
 import { doDateLabel, formatEstimate } from './format';
 import { perDaySubtasks } from './subtasks';
@@ -13,7 +14,6 @@ import './TaskFields.css';
 
 const PRIORITIES: Priority[] = ['none', 'low', 'medium', 'high'];
 const ESTIMATES = [10, 30, 60, 120];
-const NEW_CLASS = '__new__';
 
 export function Field({ label, htmlFor, children }: { label: ReactNode; htmlFor?: string; children: ReactNode }) {
   return (
@@ -164,7 +164,7 @@ export function EstimateField({ id, value, onChange }: { id: string; value?: num
 type ListKind = 'class' | 'personal' | 'quick';
 export type ListPatch = { list: 'personal' | 'quick'; classId: string | undefined };
 
-/** Which list a personal task lives in (Class / Personal / Quick) and, for Class, which class. */
+/** Which list a personal task lives in (Class or topic / Personal / Quick) and, for that, which class or topic. */
 export function ListField({
   id,
   list,
@@ -177,15 +177,15 @@ export function ListField({
   onChange: (patch: ListPatch) => void;
 }) {
   const classes = useClasses();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<'class' | 'topic' | null>(null);
   const [wantClass, setWantClass] = useState(false);
   const kind: ListKind = list === 'quick' ? 'quick' : classId || wantClass ? 'class' : 'personal';
 
   const pickKind = (k: ListKind) => {
     setWantClass(k === 'class');
-    setCreating(false);
+    setCreating(null);
     if (k === 'class') {
-      if (!classes.length) setCreating(true);
+      if (!classes.length) setCreating('class');
       if (list === 'quick') onChange({ list: 'personal', classId });
     } else onChange({ list: k, classId: undefined });
   };
@@ -197,7 +197,7 @@ export function ListField({
           name="List"
           value={kind}
           options={[
-            { value: 'class', label: 'Class' },
+            { value: 'class', label: 'Class / topic' },
             { value: 'personal', label: 'Personal' },
             { value: 'quick', label: 'Quick item' },
           ]}
@@ -205,12 +205,13 @@ export function ListField({
         />
       </Field>
       {kind === 'class' && (
-        <Field label="Class" htmlFor={id}>
+        <Field label="Class or topic" htmlFor={id}>
           {creating ? (
             <NewClassInput
               id={id}
+              kind={creating}
               onDone={(created) => {
-                setCreating(false);
+                setCreating(null);
                 if (created) onChange({ list: 'personal', classId: created });
                 else if (!classId) setWantClass(false);
               }}
@@ -222,17 +223,13 @@ export function ListField({
                 className="td-input"
                 value={classId ?? ''}
                 onChange={(e) => {
-                  if (e.target.value === NEW_CLASS) setCreating(true);
+                  const k = newKindOf(e.target.value);
+                  if (k) setCreating(k);
                   else onChange({ list: 'personal', classId: e.target.value || undefined });
                 }}
               >
-                {!classId && <option value="">Pick a class</option>}
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-                <option value={NEW_CLASS}>＋ New class…</option>
+                {!classId && <option value="">Pick a class or topic</option>}
+                <ClassOptions classes={classes} />
               </select>
             </div>
           )}
@@ -242,17 +239,17 @@ export function ListField({
   );
 }
 
-/** Inline "new class" name box; reports the created (or matching existing) class id, or null when cancelled. */
-function NewClassInput({ id, onDone }: { id: string; onDone: (classId: string | null) => void }) {
+/** Inline "new class/topic" name box; reports the created (or matching existing) id, or null when cancelled. */
+function NewClassInput({ id, kind, onDone }: { id: string; kind: 'class' | 'topic'; onDone: (classId: string | null) => void }) {
   const [name, setName] = useState('');
-  const save = () => onDone(name.trim() ? createClass(name) : null);
+  const save = () => onDone(name.trim() ? createClass(name, undefined, kind) : null);
   return (
     <div className="td-inline">
       <input
         id={id}
         className="td-input td-grow"
         autoFocus
-        placeholder="Class name, e.g. CSE 110"
+        placeholder={kind === 'topic' ? 'Topic name, e.g. Research' : 'Class name, e.g. CSE 110'}
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
@@ -269,7 +266,7 @@ function NewClassInput({ id, onDone }: { id: string; onDone: (classId: string | 
       <button type="button" className="text-btn" onClick={save} disabled={!name.trim()}>
         Add
       </button>
-      <button type="button" className="icon-btn small" onClick={() => onDone(null)} aria-label="Cancel new class">
+      <button type="button" className="icon-btn small" onClick={() => onDone(null)} aria-label={`Cancel new ${kind}`}>
         <Icon name="close" />
       </button>
     </div>

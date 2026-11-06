@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PALETTE } from '../config';
 import { useStore } from '../store';
-import { createClass, findClassByName, nextClassColor, useClasses } from '../store/tasks';
+import { createClass, findClassByName, isTopic, nextClassColor, useClasses } from '../store/tasks';
 import type { ClassInfo } from '../types';
 import Icon from './Icon';
 import './Settings.css';
@@ -123,7 +123,7 @@ function ClassRow({ cls, index, all, move }: {
             </div>
           )}
           <div className="s-item__sub" title={cls.aliases.join(', ')}>
-            {cls.aliases.length ? cls.aliases.join(' · ') : cls.manual ? 'Added by you' : 'No linked courses'}
+            {cls.aliases.length ? cls.aliases.join(' · ') : isTopic(cls) ? 'Topic' : cls.manual ? 'Added by you' : 'No linked courses'}
           </div>
         </div>
         <div className="s-item__actions">
@@ -209,9 +209,10 @@ function ClassRow({ cls, index, all, move }: {
   );
 }
 
-/** Name + color form for adding a class by hand. */
+/** Name + color form for adding a class or topic by hand. */
 function AddClass() {
   const classes = useStore((s) => s.classes);
+  const [kind, setKind] = useState<'class' | 'topic'>('class');
   const [name, setName] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
   const [palette, setPalette] = useState(false);
@@ -226,7 +227,7 @@ function AddClass() {
       onSubmit={(e) => {
         e.preventDefault();
         if (!clean || dupe) return;
-        createClass(clean, color);
+        createClass(clean, color, kind);
         setMsg(`Added “${clean}”.`);
         setName('');
         setPicked(null);
@@ -238,16 +239,23 @@ function AddClass() {
           type="button"
           className="cls-row__swatch"
           style={{ background: color }}
-          aria-label="Color for the new class"
+          aria-label={`Color for the new ${kind}`}
           aria-expanded={palette}
           onClick={() => setPalette((p) => !p)}
         />
+        <label className="s-field cls-add__kind">
+          <span className="sr-only">Kind</span>
+          <select className="s-input" value={kind} onChange={(e) => setKind(e.target.value as 'class' | 'topic')}>
+            <option value="class">Class</option>
+            <option value="topic">Topic</option>
+          </select>
+        </label>
         <label className="s-field cls-add__name">
-          <span className="sr-only">New class name</span>
+          <span className="sr-only">New {kind} name</span>
           <input
             className="s-input"
             value={name}
-            placeholder="New class, e.g. CHEM 6A"
+            placeholder={kind === 'topic' ? 'New topic, e.g. Research, Gym, Job search' : 'New class, e.g. CHEM 6A'}
             maxLength={60}
             aria-invalid={!!dupe}
             aria-describedby="cls-add-msg"
@@ -288,7 +296,7 @@ function AddClass() {
   );
 }
 
-/** Settings → Classes: add, color, rename, order, hide, delete and merge the classes tasks are grouped by. */
+/** Settings → Classes & topics: add, color, rename, order, hide, delete and merge the groups tasks are filed under. */
 export default function SettingsClasses() {
   const classes = useClasses();
   const updateClass = useStore((s) => s.updateClass);
@@ -311,10 +319,10 @@ export default function SettingsClasses() {
         <div className="cls-empty">
           <Icon name="school" />
           <div>
-            <b>No classes yet</b>
+            <b>No classes or topics yet</b>
             <span>
               Classes appear automatically from your Canvas and PrairieLearn assignments. Add any others yourself, like
-              a class without online assignments, so you can file tasks and class time under it.
+              a class without online assignments, or a topic such as Research or Job search, to group tasks and time.
             </span>
           </div>
         </div>

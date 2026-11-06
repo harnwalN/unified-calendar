@@ -1,10 +1,9 @@
-// Class picker: a <select> of live classes plus "New class…", which swaps in an inline name field.
+// Class picker: a <select> of live classes and topics plus "New class…" / "New topic…", which swap in an inline name field.
 import { useEffect, useRef, useState } from 'react';
 import { createClass, useClasses } from '../store/tasks';
 import Icon from './Icon';
+import ClassOptions, { newKindOf } from './ClassOptions';
 import './ClassSelect.css';
-
-const NEW = '__new__';
 
 export interface ClassSelectProps {
   /** Selected class id, or '' for none. */
@@ -30,7 +29,7 @@ export default function ClassSelect({
   value, onChange, allowNone, noneLabel = 'No class', placeholder, extraOptions = [], suggestedName = '', label, className, id,
 }: ClassSelectProps) {
   const classes = useClasses();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<'class' | 'topic' | null>(null);
   const [name, setName] = useState('');
   const select = useRef<HTMLSelectElement>(null);
   const refocus = useRef(false);
@@ -44,10 +43,10 @@ export default function ClassSelect({
 
   const close = () => {
     refocus.current = true;
-    setCreating(false);
+    setCreating(null);
   };
   const save = () => {
-    const created = createClass(name);
+    const created = createClass(name, undefined, creating ?? 'class');
     if (!created) return;
     close();
     onChange(created);
@@ -56,12 +55,12 @@ export default function ClassSelect({
   if (creating) {
     // Not a <form>: this can sit inside another form (task editors).
     return (
-      <div className={`class-new${className ? ` ${className}` : ''}`} role="group" aria-label="New class">
+      <div className={`class-new${className ? ` ${className}` : ''}`} role="group" aria-label={`New ${creating}`}>
         <input
           value={name}
           autoFocus
-          placeholder="Class name"
-          aria-label="New class name"
+          placeholder={creating === 'topic' ? 'Topic name, e.g. Research' : 'Class name'}
+          aria-label={`New ${creating} name`}
           maxLength={60}
           onChange={(e) => setName(e.target.value)}
           onFocus={(e) => e.target.select()}
@@ -76,7 +75,7 @@ export default function ClassSelect({
             }
           }}
         />
-        <button type="button" className="class-new__btn class-new__btn--ok" aria-label="Add class" disabled={!name.trim()} onClick={save}>
+        <button type="button" className="class-new__btn class-new__btn--ok" aria-label={`Add ${creating}`} disabled={!name.trim()} onClick={save}>
           <Icon name="check" />
         </button>
         <button type="button" className="class-new__btn" aria-label="Cancel" onClick={close}>
@@ -95,18 +94,14 @@ export default function ClassSelect({
       aria-label={label}
       value={known ? value : ''}
       onChange={(e) => {
-        if (e.target.value !== NEW) return onChange(e.target.value);
-        setName(suggestedName.trim());
-        setCreating(true);
+        const kind = newKindOf(e.target.value);
+        if (!kind) return onChange(e.target.value);
+        setName(kind === 'class' ? suggestedName.trim() : '');
+        setCreating(kind);
       }}
     >
       {allowNone ? <option value="">{noneLabel}</option> : (value === '' || !known) && <option value="">{placeholder ?? 'Choose a class…'}</option>}
-      {classes.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-        </option>
-      ))}
-      <option value={NEW}>＋ New class…</option>
+      <ClassOptions classes={classes} />
       {extraOptions.map((o) => (
         <option key={o.value} value={o.value}>
           {o.label}

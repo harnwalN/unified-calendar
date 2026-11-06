@@ -253,19 +253,22 @@ function TitleInput({ id, title }: { id: string; title: string }) {
   );
 }
 
-/** Work sessions scheduled before subtasks replaced them: still shown (and removable), no longer created here. */
+/** Upcoming work sessions (made in "Plan my day"): listed here so they can be removed. */
 function LegacyBlocks({ task, now }: { task: TaskView; now: Date }) {
   const upcoming = (task.blocks ?? []).filter((b) => Date.parse(b.start) + b.durationMin * 60_000 > now.getTime());
   if (!upcoming.length) return null;
   const remove = (blockId: string) =>
     useStore.getState().updateTaskFields(task.ref, { blocks: (task.blocks ?? []).filter((b) => b.id !== blockId) });
   return (
-    <Field label="Scheduled work sessions">
+    <Field label="Scheduled">
       <ul className="td-blocks">
         {upcoming.map((b) => (
           <li key={b.id}>
             <Icon name="schedule" size={18} />
-            <span>{formatBlock(b)}</span>
+            <span>
+              {formatBlock(b)}
+              {b.subtaskId && task.subtasks.some((x) => x.id === b.subtaskId) && ` · ${task.subtasks.find((x) => x.id === b.subtaskId)!.title}`}
+            </span>
             <button className="icon-btn small" onClick={() => remove(b.id)} aria-label={`Remove ${formatBlock(b)}`}>
               <Icon name="close" />
             </button>

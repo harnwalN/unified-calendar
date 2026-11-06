@@ -1,6 +1,6 @@
 // The home planner: a timeline of the selected day, or a week of timelines, or a month grid,
 // with date navigation and a one-click way back to today.
-import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { format, isSameDay, isSameMonth, startOfDay, startOfWeek } from 'date-fns';
 import { useStore } from '../../store';
 import { monthGridDays, stepCursor, viewTitle, visibleDays, weekdayLabels } from '../../lib/time';
@@ -8,6 +8,7 @@ import type { ViewMode } from '../../types';
 import Icon from '../Icon';
 import { useNow } from '../hooks';
 import DayTrack, { HourAxis, openPlannerEvent, TrackedStrip } from './DayTrack';
+import DayPlan from './DayPlan';
 import { formatDuration } from './format';
 import type { SubtaskItem } from './grouping';
 import { hourRange, pct } from './timeline';
@@ -121,6 +122,8 @@ const trackedMs = (d: DayData) => d.tracked.reduce((sum, s) => sum + (s.end - s.
 
 function DayMode({ data, now }: { data: DayData; now: number }) {
   const isToday = now >= data.day && now < data.end;
+  const [planning, setPlanning] = useState(false);
+  const canPlan = data.end > now;
   const range = hourRange(data.spans, data.day, now);
   const at = (t: number) => pct(t, data.day, range);
   const tracked = trackedMs(data);
@@ -163,6 +166,12 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
           </span>
         )}
         <span className="tb-status">{status}</span>
+        {canPlan && (
+          <button className={`tb-plan${planning ? ' on' : ''}`} onClick={() => setPlanning(!planning)} aria-expanded={planning}>
+            <Icon name="event_note" size={16} />
+            {isToday ? 'Plan my day' : 'Plan this day'}
+          </button>
+        )}
         {isToday && (
           <span className="tb-left">
             {endOfRange > now ? `${formatDuration(endOfRange - now)} left until ${format(endOfRange, 'h a')}` : 'Day’s done'}
@@ -182,6 +191,7 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
       <DayTrack data={data} range={range} now={now} />
       {data.tracked.length > 0 && <TrackedStrip data={data} at={at} />}
       <HourAxis day={data.day} range={range} />
+      {planning && canPlan && <DayPlan data={data} now={now} onClose={() => setPlanning(false)} />}
     </div>
   );
 }

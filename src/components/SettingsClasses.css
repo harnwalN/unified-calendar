@@ -45,6 +45,7 @@
 .cls-add { display: grid; gap: 10px; min-width: 0; }
 .cls-add__line { display: flex; align-items: center; gap: 12px; padding-left: 14px; min-width: 0; }
 .cls-add__name { flex: 1 1 auto; }
+.cls-add__kind { flex: none; width: auto; }
 .cls-add__palette { padding-left: 50px; }
 .cls-add__msg { margin: 0; padding-left: 50px; }
 .cls-add__msg:empty { display: none; }

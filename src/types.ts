@@ -120,15 +120,14 @@ export interface Subtask {
   doDate?: string;
 }
 
-/**
- * A scheduled work session for a task ("work on PA 3 Wed 2–3:30 PM"). Superseded by dated
- * subtasks in the details drawer; existing blocks still load, render and can be removed.
- */
+/** A scheduled work session for a task ("work on PA 3 Wed 2–3:30 PM"), made in "Plan my day". */
 export interface WorkBlock {
   id: string;
   /** ISO start. */
   start: string;
   durationMin: number;
+  /** The subtask this session is for, if any (shown by its title on the timeline). */
+  subtaskId?: string;
 }
 
 /** Planning fields shared by Canvas/PrairieLearn assignments and personal tasks. */
@@ -175,6 +174,8 @@ export interface ClassInfo extends Synced {
   meetingTitles?: string[];
   /** Added by hand in the app rather than created from an assignment's course. */
   manual?: boolean;
+  /** 'topic': a non-school group (research, job search, gym…) that works like a class. Absent = a class. */
+  kind?: 'class' | 'topic';
   /** Meetings the user isn't attending (cancelled, skipped): `CalEvent.id` → occurrence start (ISO, for pruning). */
   skipped?: Record<string, string>;
 }
