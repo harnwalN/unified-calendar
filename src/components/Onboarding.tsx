@@ -13,7 +13,8 @@ function OnboardingDone() {
   const accounts = useStore((s) => s.accounts.length);
   const feeds = useStore((s) => s.feeds.length);
   const tips = [
-    { icon: 'checklist', text: 'Check off assignments in “Due soon” as you finish them.' },
+    { icon: 'checklist', text: 'Your assignments land in Today and in a section per class. Check them off as you finish.' },
+    { icon: 'edit_calendar', text: '“Plan my day” above the timeline puts tasks into your free time around classes.' },
     { icon: 'notifications', text: 'Turn on reminders in Settings to get notified before deadlines.' },
     { icon: 'install_mobile', text: 'Install it: “Add to Home Screen” on your phone, or the install icon in your browser’s address bar.' },
   ];

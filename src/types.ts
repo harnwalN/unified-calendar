@@ -72,7 +72,7 @@ export interface Settings {
   remindersEnabled: boolean;
   /** Minutes before an assignment's due time to notify, e.g. [1440, 60]. */
   reminderOffsetsMin: number[];
-  /** Hide checked-off assignments from the grid (they always stay in the checklist). */
+  /** Hide the "Completed" groups in the home lists (finished tasks stay in search and the Time page). */
   hideCompleted: boolean;
   /** Google account whose Drive app-data folder syncs tasks/time across devices (per device). */
   syncAccountId?: string;

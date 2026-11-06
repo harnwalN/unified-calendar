@@ -19,7 +19,9 @@ import Planner from './Planner';
 import './TasksHome.css';
 
 export default function TasksHome() {
-  const { sections, now } = useHomeSections();
+  const search = useStore((s) => s.search);
+  const searching = search.trim() !== '';
+  const { sections, now, matches } = useHomeSections(search);
   const tasks = useTasks();
   const hasSources = useStore((s) => Object.keys(s.calendars).length > 0 || s.feeds.length > 0 || s.accounts.length > 0);
   const [collapsed, toggle] = useCollapsedSections();
@@ -73,7 +75,18 @@ export default function TasksHome() {
         ) : (
           <div className="th-columns">
             <div className="th-col-main">
-            {openCount === 0 && tasks.length > 0 && (
+            {searching && (
+              <div className="th-search" role="status">
+                <Icon name="search" />
+                <span>
+                  {matches ? `${matches} task${matches === 1 ? '' : 's'}` : 'No tasks'} matching “{search.trim()}” · the timeline shows matching events
+                </span>
+                <button className="text-btn" onClick={() => useStore.getState().setSearch('')}>
+                  Clear
+                </button>
+              </div>
+            )}
+            {!searching && openCount === 0 && tasks.length > 0 && (
               <div className="th-celebrate" role="status">
                 <Icon name="celebration" />
                 <div>
@@ -282,6 +295,7 @@ function GroupBody({
   const staleKey = `${sectionId}:stale`;
   const doneOpen = collapsed[doneKey] === true;
   const staleOpen = collapsed[staleKey] === true;
+  const hideDone = useStore((s) => s.settings.hideCompleted);
   return (
     <>
       {group.open.length > 0 ? <TaskList tasks={group.open} now={now} showClass={showClass} fits={fits} /> : empty}
@@ -290,7 +304,7 @@ function GroupBody({
           <TaskList tasks={stale} now={now} showClass={showClass} />
         </SubGroup>
       )}
-      {group.done.length > 0 && (
+      {group.done.length > 0 && !hideDone && (
         <SubGroup label={`Completed (${group.done.length})`} open={doneOpen} onToggle={() => onToggle(doneKey)}>
           <TaskList tasks={group.done} now={now} showClass={showClass} />
         </SubGroup>

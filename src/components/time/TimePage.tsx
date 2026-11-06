@@ -134,7 +134,7 @@ export default function TimePage() {
             )}
             <label className="time-class-toggle" title="Count lectures, labs and other class meetings from your calendar">
               <input type="checkbox" checked={includeClasses} onChange={(e) => toggleClasses(e.target.checked)} />
-              Include time in class
+              Include class & topic meetings
             </label>
           </nav>
         )}

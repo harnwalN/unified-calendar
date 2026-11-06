@@ -1,12 +1,13 @@
 // "Plan my day": put the day's tasks and subtasks into time slots (WorkBlocks), let the app fit
 // them into free time around events, add your own blocks ("Gym", "Lunch"…), and say which of the
 // day's classes you're attending. Free stretches also show on the day bar; clicking one fills it.
-import { useCallback, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { newId, taskRef, useStore } from '../../store';
 import { dayKey, useTasks } from '../../store/tasks';
 import type { TaskRef, TaskView, WorkBlock } from '../../types';
-import { setMeetingSkipped, useClassMatcher } from '../../features/classMeetings';
+import { useClassMatcher } from '../../features/classMeetings';
+import GoingToggle from '../GoingToggle';
 import ClassSelect from '../ClassSelect';
 import Icon from '../Icon';
 import { formatDuration } from './format';
@@ -159,7 +160,15 @@ export default function DayPlan({
   const [fitMsg, setFitMsg] = useState('');
   const [editWindow, setEditWindow] = useState(false);
   const match = useClassMatcher();
-  const { toPlan, others } = useToPlan(day, now, extra);
+  // A task sent here from its details ("Schedule a time…") is listed first and highlighted.
+  const focus = useStore((s) => s.dayPlan.focus);
+  const wanted = useMemo(() => (focus ? [focus, ...extra] : extra), [focus, extra]);
+  const planned = useToPlan(day, now, wanted);
+  const others = planned.others;
+  const toPlan = useMemo(
+    () => (focus ? [...planned.toPlan].sort((a, b) => Number(b.key === focus) - Number(a.key === focus)) : planned.toPlan),
+    [planned.toPlan, focus],
+  );
 
   // Work sessions and the day's class meetings, in time order.
   const agenda = useMemo(() => {
@@ -240,7 +249,7 @@ export default function DayPlan({
           {toPlan.length ? (
             <ul className="dp-list">
               {toPlan.map((item) => (
-                <PlanRow key={item.key} item={item} frame={frame} day={data.day} />
+                <PlanRow key={item.key} item={item} frame={frame} day={data.day} focused={item.key === focus} />
               ))}
             </ul>
           ) : (
@@ -318,13 +327,17 @@ function TimePick({ value, onChange, label, className = '' }: { value: number; o
   );
 }
 
-function PlanRow({ item, frame, day }: { item: PlanItem; frame: PlanFrame; day: number }) {
+function PlanRow({ item, frame, day, focused }: { item: PlanItem; frame: PlanFrame; day: number; focused?: boolean }) {
   const color = useTaskColor(item.task);
+  const row = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (focused) row.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [focused]);
   const [minutes, setMinutes] = useState(item.minutes);
   const [time, setTime] = useState<string | null>(null);
   const start = time ? atTime(day, time) : suggestedStart(frame, minutes);
   return (
-    <li className="dp-row" style={{ '--task-color': color } as CSSProperties}>
+    <li ref={row} className={`dp-row${focused ? ' focus' : ''}`} style={{ '--task-color': color } as CSSProperties}>
       <span className="dp-dot" aria-hidden="true" />
       <span className="dp-title">
         <span>{item.title}</span>
@@ -391,16 +404,7 @@ function ClassMeetingRow({ span, classId }: { span: EventSpan; classId?: string 
         </span>
         <small>until {clock(Date.parse(event.end))}</small>
       </span>
-      {classId && (
-        <div className="dp-going" role="radiogroup" aria-label={`Going to ${event.title}?`}>
-          <button role="radio" aria-checked={attending} className={attending ? 'on' : undefined} onClick={() => !attending && setMeetingSkipped(classId, event, false)}>
-            Going
-          </button>
-          <button role="radio" aria-checked={!attending} className={!attending ? 'on' : undefined} onClick={() => attending && setMeetingSkipped(classId, event, true)}>
-            Skip
-          </button>
-        </div>
-      )}
+      {classId && <GoingToggle classId={classId} event={event} skipped={!attending} />}
     </li>
   );
 }

@@ -138,3 +138,6 @@
   }
   .td-body { padding: 8px 16px 24px; }
 }
+
+.td-schedule { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; }
+.td-schedule .td-sub { color: var(--text-3); font-weight: 400; }

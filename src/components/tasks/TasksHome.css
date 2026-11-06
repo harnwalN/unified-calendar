@@ -233,3 +233,9 @@
   .home-clock-time { font-size: 30px; line-height: 36px; }
   .home-clock-date { font-size: 15px; }
 }
+
+.th-search {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 8px 8px 8px 14px;
+  border-radius: var(--radius-l); background: var(--primary-container); color: var(--on-primary-container); font-size: 13px;
+}
+.th-search span { flex: 1; min-width: 0; }

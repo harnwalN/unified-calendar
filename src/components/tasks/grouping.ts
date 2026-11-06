@@ -229,3 +229,11 @@ export function dayLoads(days: Date[], events: CalEvent[], tasks: TaskView[]): D
     return { date, events: n, tasksDue: due.length };
   });
 }
+
+/** Search over a task: its title, notes, course, class/topic name and subtask titles (case-insensitive). */
+export function matchesSearch(t: TaskView, query: string, className?: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const fields = [t.title, t.notes, t.course, className, ...t.subtasks.map((s) => s.title)];
+  return fields.some((f) => f?.toLowerCase().includes(q));
+}

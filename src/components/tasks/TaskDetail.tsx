@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { taskRef, useStore } from '../../store';
-import { useClasses, useTasks } from '../../store/tasks';
+import { dayKey, useClasses, useTasks } from '../../store/tasks';
 import { toggleTimer, useRunningElapsed } from '../../features/timer';
 import type { TaskStatus, TaskView } from '../../types';
 import Icon from '../Icon';
@@ -198,6 +198,8 @@ function Drawer({ task, onDeleted }: { task: TaskView; onDeleted: (id: string, t
 
           <DoDateField id="td-do" value={task.doDate} onChange={(doDate) => patch({ doDate })} />
 
+          <ScheduledTimes task={task} now={now} />
+
           <EstimateField id="td-est" value={task.estimateMin} onChange={(estimateMin) => patch({ estimateMin })} />
 
           {personal && (
@@ -212,8 +214,6 @@ function Drawer({ task, onDeleted }: { task: TaskView; onDeleted: (id: string, t
           <SubtaskEditor subtasks={task.subtasks} due={task.due} onChange={(subtasks) => patch({ subtasks })} />
 
           <NotesField id="td-notes" value={task.notes} onChange={(notes) => patch({ notes })} />
-
-          <LegacyBlocks task={task} now={now} />
 
           {href && (
             <a className="filled-btn td-link" href={href} target="_blank" rel="noopener noreferrer">
@@ -253,28 +253,41 @@ function TitleInput({ id, title }: { id: string; title: string }) {
   );
 }
 
-/** Upcoming work sessions (made in "Plan my day"): listed here so they can be removed. */
-function LegacyBlocks({ task, now }: { task: TaskView; now: Date }) {
+/** Upcoming times set for this task in "Plan my day", and a way there to add one. */
+function ScheduledTimes({ task, now }: { task: TaskView; now: Date }) {
   const upcoming = (task.blocks ?? []).filter((b) => Date.parse(b.start) + b.durationMin * 60_000 > now.getTime());
-  if (!upcoming.length) return null;
+  if (task.status === 'done' && !upcoming.length) return null;
   const remove = (blockId: string) =>
     useStore.getState().updateTaskFields(task.ref, { blocks: (task.blocks ?? []).filter((b) => b.id !== blockId) });
+  // Plan the do-on day when it's still ahead, else today.
+  const planDay = task.doDate && task.doDate >= dayKey(now) ? parseISO(task.doDate) : now;
   return (
-    <Field label="Scheduled">
-      <ul className="td-blocks">
-        {upcoming.map((b) => (
-          <li key={b.id}>
-            <Icon name="schedule" size={18} />
-            <span>
-              {formatBlock(b)}
-              {b.subtaskId && task.subtasks.some((x) => x.id === b.subtaskId) && ` · ${task.subtasks.find((x) => x.id === b.subtaskId)!.title}`}
-            </span>
-            <button className="icon-btn small" onClick={() => remove(b.id)} aria-label={`Remove ${formatBlock(b)}`}>
-              <Icon name="close" />
-            </button>
-          </li>
-        ))}
-      </ul>
+    <Field label="Scheduled times">
+      {upcoming.length > 0 && (
+        <ul className="td-blocks">
+          {upcoming.map((b) => {
+            const sub = b.subtaskId ? task.subtasks.find((x) => x.id === b.subtaskId) : undefined;
+            return (
+              <li key={b.id}>
+                <Icon name="schedule" size={18} />
+                <span>
+                  {formatBlock(b)}
+                  {sub && ` · ${sub.title}`}
+                </span>
+                <button className="icon-btn small" onClick={() => remove(b.id)} aria-label={`Remove ${formatBlock(b)}`}>
+                  <Icon name="close" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {task.status !== 'done' && (
+        <button type="button" className="td-chip td-schedule" onClick={() => useStore.getState().openDayPlan(planDay, task.ref)}>
+          <Icon name="edit_calendar" size={16} />
+          Schedule a time <span className="td-sub">· {dayKey(planDay) === dayKey(now) ? 'today' : format(planDay, 'EEE, MMM d')}</span>
+        </button>
+      )}
     </Field>
   );
 }

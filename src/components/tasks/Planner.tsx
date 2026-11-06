@@ -89,6 +89,16 @@ export default function Planner() {
             {title}
           </h2>
         </div>
+        {mode !== 'day' && (
+          <button
+            className="tb-plan"
+            onClick={() => useStore.getState().openDayPlan(showsToday ? nowDate : cursor)}
+            title="Open a day's plan (today when it's in view)"
+          >
+            <Icon name="edit_calendar" size={18} />
+            Plan a day
+          </button>
+        )}
         <div
           className="pl-modes"
           role="radiogroup"
@@ -127,7 +137,7 @@ const MIN_BAR_SLOT = 30 * 60_000;
 
 function DayMode({ data, now }: { data: DayData; now: number }) {
   const isToday = now >= data.day && now < data.end;
-  const [planning, setPlanning] = useState(false);
+  const planning = useStore((s) => s.dayPlan.open);
   const [picked, setSlot] = useState<Interval | null>(null);
   // A slot picked on another day doesn't carry over when you switch days.
   const slot = picked && picked.start >= data.day && picked.start < data.end ? picked : null;
@@ -135,7 +145,9 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
   const frame = usePlanFrame(data, now);
   const { toPlan } = useToPlan(dayKey(data.day), now);
   const togglePlanning = () => {
-    setPlanning(!planning);
+    const s = useStore.getState();
+    if (planning) s.closeDayPlan();
+    else s.openDayPlan(new Date(data.day));
     setSlot(null);
   };
   const range = hourRange(data.spans, data.day, now);
@@ -163,7 +175,7 @@ function DayMode({ data, now }: { data: DayData; now: number }) {
       data.spans.length ? `${data.spans.length} event${data.spans.length === 1 ? '' : 's'}` : 'No events',
       data.due.length ? `${data.due.length} due` : '',
       data.subtasks.length ? `${data.subtasks.length} subtask${data.subtasks.length === 1 ? '' : 's'} planned` : '',
-      classMs(data) >= 60_000 ? `${formatDuration(classMs(data))} in class` : '',
+      classMs(data) >= 60_000 ? `${formatDuration(classMs(data))} in classes & meetings` : '',
       tracked >= 60_000 ? `${formatDuration(tracked)} tracked` : '',
     ].filter(Boolean);
     status = parts.join(' · ');

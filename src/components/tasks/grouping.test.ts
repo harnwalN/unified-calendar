@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayLoads, fitsGap, freeMinutes, groupTasks, isTodayTask, subtasksOnDay } from './grouping';
+import { dayLoads, fitsGap, freeMinutes, groupTasks, isTodayTask, matchesSearch, subtasksOnDay } from './grouping';
 import { perDaySubtasks } from './subtasks';
 import { doDateLabel, dueLabel, formatDuration, openLinkLabel, relativeDue } from './format';
 import type { CalEvent, ClassInfo, Subtask, TaskView } from '../../types';
@@ -275,5 +275,18 @@ describe('relativeDue', () => {
     expect(relativeDue(new Date(2026, 9, 30, 23, 59).toISOString(), now)).toBe('Fri');
     expect(relativeDue(new Date(2026, 10, 13, 23, 59).toISOString(), now)).toBe('in 18 days');
     expect(relativeDue(new Date(2026, 9, 24, 23, 59).toISOString(), now)).toBe('2 days ago');
+  });
+});
+
+describe('matchesSearch', () => {
+  it('matches title, notes, course, class name and subtasks, ignoring case', () => {
+    const t = task({ title: 'PA 3', notes: 'see Piazza', course: 'CSE 110 - FA26', subtasks: [{ id: 'a', title: 'Write tests', done: false }] });
+    expect(matchesSearch(t, '')).toBe(true);
+    expect(matchesSearch(t, 'pa 3')).toBe(true);
+    expect(matchesSearch(t, 'piazza')).toBe(true);
+    expect(matchesSearch(t, 'cse 110')).toBe(true);
+    expect(matchesSearch(t, 'tests')).toBe(true);
+    expect(matchesSearch(t, 'research', 'Research')).toBe(true);
+    expect(matchesSearch(t, 'gym')).toBe(false);
   });
 });

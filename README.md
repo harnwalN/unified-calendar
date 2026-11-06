@@ -8,15 +8,20 @@ A free, Google-Calendar-style web app that puts **all your calendars in one plac
 - 📝 **PrairieLearn** deadlines (via a bookmarklet)
 - ☁️ Optional **sync across devices** through a hidden app folder in your own Google Drive
 
-Features: a day / week / month planner of timelines, search, per-calendar colors and visibility, a **“Due soon” checklist** for
-assignments (check them off as you finish), **deadline reminders** as notifications, light/dark theme, works on phones
-and installs as an app (PWA).
+Tasks first: a **Today** list, one section per **class or topic** (classes come from your assignments; add your own,
+or topics like Research or Gym), personal to-dos and quick items. Every task has a priority, an estimate for the whole
+task, a **Do on** day, notes and **subtasks** that can each have their own day (they show up in Today on that day).
+Rows double as progress bars, tinted by priority.
 
-Tasks first: a **Today** list, one section per class, personal to-dos and quick items; a **time bar for today**
-(events, scheduled work, deadlines and tracked time on one line); **schedule work sessions** on any task across several
-days; a one-click **stopwatch** with day/week stats; a **floating mini window** (🗗 in the top bar) that shows your
-timer and today's tasks on top of other tabs; and a **Gmail-style background** (⛰ in the top bar): eight landscapes
-whose sun, shadows, drifting clouds and sky follow the real time of day, across the whole page or just the header. Everything is stored in your browser — there is no app database.
+Planning: a day / week / month planner of timelines (events, your plan, deadlines and tracked time on one bar) and
+**Plan my day** — put tasks and subtasks into time slots, click a free slot on the bar to fill it, or let it **fit
+everything into your free time** around classes; mark a class **Going / Skip** for just one meeting.
+
+Also: search across tasks and events, per-calendar colors and visibility, **deadline reminders**, a one-click
+**stopwatch** with day/week stats (including time in class), a **floating mini window** (🗗 in the top bar) with your
+timer and today's tasks on top of other tabs, a **Gmail-style background** (⛰ in the top bar) whose sun and sky follow
+the real time of day, light/dark theme, and it installs as an app (PWA). Everything is stored in your browser — there is
+no app database.
 
 **Live site:** https://harnwaln.github.io/unified-calendar/
 
@@ -33,8 +38,8 @@ whose sun, shadows, drifting clouds and sky follow the real time of day, across 
    3. Copy the link it shows (it looks like `https://<school>.instructure.com/feeds/calendars/user_….ics`).
    4. Paste it into **Settings → Canvas** (or the welcome guide) and click **Add**.
 
-   Assignments appear as deadlines and in the **Due soon** list. Treat the link like a password — anyone with it can
-   see your Canvas calendar.
+   Assignments show up in **Today** (when they're due) and in their class's section, with a flag on the timeline.
+   Treat the link like a password — anyone with it can see your Canvas calendar.
 4. **Other calendars.** In **Settings → Other calendars**, give it a name, paste any `.ics`, `webcal://` or `https://`
    calendar link and pick a color. Example — US holidays:
    `https://calendar.google.com/calendar/ical/en.usa%23holiday%40group.v.calendar.google.com/public/basic.ics`
@@ -44,13 +49,19 @@ whose sun, shadows, drifting clouds and sky follow the real time of day, across 
    hours, 1 hour, 15 min before). Reminders fire while the site is open in a tab or installed as an app. On iOS they
    only work for the Home-Screen app.
 
-7. **Classes.** Assignments are grouped into classes automatically from their course names. In **Settings → Classes**
-   you can rename, recolor, reorder, hide or delete them, and **merge** two classes when the same course shows up
-   under different names (e.g. `CSE 110 - FA26` on Canvas and `CSE 110` on PrairieLearn).
-8. **PrairieLearn.** PrairieLearn has no calendar feed, so **Settings → PrairieLearn** offers a **Send to Calendar**
+7. **Classes & topics.** Assignments are grouped into classes automatically from their course names. Add your own
+   class or a **topic** (Research, Gym, Job search…) with the **+** next to *Classes & topics* in the sidebar, or from
+   any class picker. In **Settings → Classes & topics** you can rename, recolor, reorder, hide or delete them, and
+   **merge** two classes when the same course shows up under different names (e.g. `CSE 110 - FA26` on Canvas and
+   `CSE 110` on PrairieLearn). Repeating calendar events (lectures, labs) are matched to classes by course code, or
+   you pick one in the event's popup or under *Time → Are any of these classes or topics?*.
+8. **Plan your day.** Click **Plan my day** above the day timeline (or **Schedule a time…** in a task's details). Pick
+   a time for each task or subtask, click a dashed **＋** slot on the bar to fill it, or **Fit into free time**. Set
+   which hours to plan with the time chip. Classes are listed with **Going / Skip**; skipped ones free up their time.
+9. **PrairieLearn.** PrairieLearn has no calendar feed, so **Settings → PrairieLearn** offers a **Send to Calendar**
    bookmarklet: drag it to your bookmarks bar, open a course’s *Assessments* page on PrairieLearn and click it. The app
    opens and imports the deadlines (run it again to update). Imported courses are listed there and can be removed.
-9. **Sync across devices.** In **Settings → Sync**, pick one of your connected Google accounts. Google asks once for
+10. **Sync across devices.** In **Settings → Sync**, pick one of your connected Google accounts. Google asks once for
     permission to use the app’s own hidden folder in your Drive (`drive.appdata` — it can’t see your other files). Your
     classes, task plans/notes, personal tasks, time logs and PrairieLearn imports are kept in one file there
     (`unified-calendar.json`) and merged per item (last edit wins) on start, on focus, every 5 minutes and a few
@@ -169,8 +180,8 @@ src/
   store/                zustand store (+ selectors)
   sources/              Google, .ics/Canvas sync, Drive app-data sync, PrairieLearn import
   lib/                  date helpers, IndexedDB cache, recurrence expansion
-  features/             checklist (Due soon), reminders, feed-link validation, reset
-  components/           TopBar, Sidebar, views, EventPopover, SettingsDialog, Onboarding, DueSoon
+  features/             class meetings, timer, reminders, mini window, feed-link validation, reset
+  components/           TopBar, Sidebar, tasks/ (home, planner, Plan my day, task details), time/, EventPopover, Settings
   styles/               design tokens (light/dark) and layout
 worker/                 Cloudflare Worker: Google code → refresh-token exchange and token refresh
 public/                 icons, privacy.html

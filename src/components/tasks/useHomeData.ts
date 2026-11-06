@@ -2,16 +2,25 @@ import { useCallback, useMemo, useState } from 'react';
 import { useStore } from '../../store';
 import { useClasses, useTasks } from '../../store/tasks';
 import { useNow } from '../hooks';
-import { groupTasks, type HomeSections } from './grouping';
+import { groupTasks, matchesSearch, type HomeSections } from './grouping';
 
-/** Home-screen sections for the current minute (shared by TasksHome and the sidebar cards). */
-export function useHomeSections(): { sections: HomeSections; now: Date } {
+/**
+ * Home-screen sections for the current minute (shared by TasksHome, the sidebar cards and the mini
+ * window). With `search`, only matching tasks are grouped and classes without a match are left out.
+ */
+export function useHomeSections(search = ''): { sections: HomeSections; now: Date; matches: number } {
   const tasks = useTasks();
   const classes = useClasses();
   const weekStartsOn = useStore((s) => s.settings.weekStartsOn);
   const now = useNow(60_000);
-  const sections = useMemo(() => groupTasks(tasks, classes, now, weekStartsOn), [tasks, classes, now, weekStartsOn]);
-  return { sections, now };
+  return useMemo(() => {
+    if (!search.trim()) return { sections: groupTasks(tasks, classes, now, weekStartsOn), now, matches: tasks.length };
+    const names = new Map(classes.map((c) => [c.id, c.name]));
+    const found = tasks.filter((t) => matchesSearch(t, search, t.classId ? names.get(t.classId) : undefined));
+    const sections = groupTasks(found, classes, now, weekStartsOn);
+    sections.classes = sections.classes.filter((c) => c.open.length + c.done.length + c.stale.length + c.inToday > 0);
+    return { sections, now, matches: found.length };
+  }, [tasks, classes, now, weekStartsOn, search]);
 }
 
 const COLLAPSED_KEY = 'tasks-home:collapsed';

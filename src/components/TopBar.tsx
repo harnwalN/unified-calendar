@@ -108,8 +108,8 @@ function SearchBox({
         <input
           ref={inputRef}
           type="search"
-          placeholder="Search events"
-          aria-label="Search events"
+          placeholder="Search tasks & events"
+          aria-label="Search tasks and events"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onBlur={() => setExpanded(false)}

@@ -93,11 +93,11 @@ export function DueInput({ id, value, onChange }: { id: string; value?: string; 
   );
 }
 
-/** "Plan to work on": a day picker plus Today / Tomorrow shortcuts. */
+/** "Do on": the day you mean to work on it (a time comes from "Plan my day"), with Today / Tomorrow shortcuts. */
 export function DoDateField({ id, value, onChange }: { id: string; value?: string; onChange: (day: string | undefined) => void }) {
   const now = new Date();
   return (
-    <Field label="Plan to work on" htmlFor={id}>
+    <Field label="Do on" htmlFor={id}>
       <div className="td-inline td-wrap">
         <input id={id} type="date" className="td-input" value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)} />
         {[
@@ -115,7 +115,7 @@ export function DoDateField({ id, value, onChange }: { id: string; value?: strin
           </button>
         ))}
         {value && (
-          <button type="button" className="icon-btn small" onClick={() => onChange(undefined)} aria-label="Clear plan date">
+          <button type="button" className="icon-btn small" onClick={() => onChange(undefined)} aria-label="Clear do-on day">
             <Icon name="close" />
           </button>
         )}

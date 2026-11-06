@@ -4,7 +4,8 @@ import { plannedTaskRef, useAllEvents, useCalendarColor } from '../store/selecto
 import { describeWhen } from '../lib/time';
 import type { CalEvent, SourceKind } from '../types';
 import Icon from './Icon';
-import { assignEventTitle, codesInTitle, isMeetingCandidate, setMeetingSkipped, useClassMatcher } from '../features/classMeetings';
+import { assignEventTitle, codesInTitle, isMeetingCandidate, useClassMatcher } from '../features/classMeetings';
+import GoingToggle from './GoingToggle';
 import ClassSelect from './ClassSelect';
 import { htmlToText, linkify, safeHref } from './eventText';
 import './EventPopover.css';
@@ -163,7 +164,7 @@ function ClassPick({ event }: { event: CalEvent }) {
   const value = match ? (match.source === 'manual' ? match.cls.id : 'auto') : 'none';
   const extra = [
     ...(match?.source === 'auto' ? [{ value: 'auto', label: `${match.cls.name} (from the title)` }] : []),
-    { value: 'none', label: 'Not a class' },
+    { value: 'none', label: 'Not a class or topic' },
     ...(value !== 'auto' ? [{ value: 'auto', label: 'Detect automatically' }] : []),
   ];
   return (
@@ -183,23 +184,22 @@ function ClassPick({ event }: { event: CalEvent }) {
   );
 }
 
-/** Mark this one occurrence of a class meeting as not attending (cancelled or skipped). */
+/** Going / Skip for this one occurrence (cancelled or skipping); same control as in "Plan my day". */
 function Attendance({ event }: { event: CalEvent }) {
   const match = useClassMatcher()(event);
   if (!match) return null;
   const { cls, skipped } = match;
   return (
-    <label className={`ep-row ep-attend${skipped ? ' skipped' : ''}`}>
-      <span className="ep-icon">
-        <input type="checkbox" checked={skipped} onChange={() => setMeetingSkipped(cls.id, event, !skipped)} />
-      </span>
+    <div className={`ep-row ep-attend${skipped ? ' skipped' : ''}`}>
+      <Icon name={skipped ? 'event_busy' : 'event_available'} className="ep-icon" />
       <span className="ep-text">
-        Not attending
+        {skipped ? 'Skipping this one' : 'Going'}
         <span className="class-pick-hint">
-          {skipped ? `Doesn't count toward ${cls.name} time or block your schedule` : 'Cancelled or skipping just this one'}
+          {skipped ? `Doesn't count toward ${cls.name} or block your schedule` : 'Cancelled or skipping? Mark just this one.'}
         </span>
       </span>
-    </label>
+      <GoingToggle classId={cls.id} event={event} skipped={skipped} />
+    </div>
   );
 }
 

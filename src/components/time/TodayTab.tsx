@@ -25,13 +25,13 @@ export default function TodayTab({ day, includeClasses }: { day: Date; includeCl
         </p>
         {classTime.totalMs > 0 && (
           <p className="time-hero-sub">
-            + {formatDuration(classTime.totalMs)} in class · {formatDuration(stats.totalMs + classTime.totalMs)} total
+            + {formatDuration(classTime.totalMs)} in meetings · {formatDuration(stats.totalMs + classTime.totalMs)} total
           </p>
         )}
       </section>
 
       <section className="time-card">
-        <h3>By class</h3>
+        <h3>By class & topic</h3>
         <GroupBars groups={stats.groups} totals={stats.byGroup} classTotals={classTime.byGroup} />
         {classTime.totalMs > 0 && (
           <ul className="chart-legend time-legend-below">

@@ -30,7 +30,7 @@ export function relativeDue(dueIso: string, now: Date): string {
   return days >= 7 ? `in ${days} days` : dueLabel(dueIso, now).text;
 }
 
-/** "Plan: Wed" / "Plan: Today" for a `yyyy-MM-dd` do-date. */
+/** "Wed" / "Today" / "Nov 3" for a `yyyy-MM-dd` do-on day. */
 export function doDateLabel(doDate: string, now: Date): string {
   const d = parseISO(doDate);
   const days = differenceInCalendarDays(d, now);

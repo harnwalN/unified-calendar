@@ -82,11 +82,14 @@ export default function TaskRow({ task, now, showClass = true, highlight }: Prop
               {due.text}
             </span>
           )}
-          {task.doDate && !done && (
-            <span className={`task-plan${plannedToday ? ' today' : ''}`}>Plan: {doDateLabel(task.doDate, now)}</span>
+          {/* A scheduled time on the do-on day says more than the day alone, so it replaces it. */}
+          {task.doDate && !done && !(nextBlock && dayKey(nextBlock.start) === task.doDate) && (
+            <span className={`task-plan${plannedToday ? ' today' : ''}`} title="Day you plan to work on it">
+              Do: {doDateLabel(task.doDate, now)}
+            </span>
           )}
           {nextBlock && !done && (
-            <span className="task-plan scheduled" title="Next scheduled work session">
+            <span className="task-plan scheduled" title="Next scheduled time (Plan my day)">
               <Icon name="event_available" size={15} />
               {nextBlockLabel(nextBlock.start, now)}
             </span>

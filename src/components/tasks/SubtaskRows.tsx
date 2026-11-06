@@ -94,7 +94,7 @@ export function SubtaskTodayRow({ item: { parent, sub }, now }: { item: SubtaskI
               {className}
             </span>
           )}
-          {missed && <span className="task-plan sub-missed">Planned {doDateLabel(sub.doDate, now)}</span>}
+          {missed && <span className="task-plan sub-missed">Missed: {doDateLabel(sub.doDate, now)}</span>}
           {due && (
             <span className={`task-due${due.overdue ? ' overdue' : ''}`}>
               <Icon name={due.overdue ? 'error' : 'schedule'} size={15} />

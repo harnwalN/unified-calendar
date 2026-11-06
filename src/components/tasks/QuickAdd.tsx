@@ -233,7 +233,7 @@ export default function QuickAdd() {
             {draft.doDate && (
               <li className="qa-chip">
                 <Icon name="event_available" size={16} />
-                Plan: {doDateLabel(draft.doDate, now)}
+                Do: {doDateLabel(draft.doDate, now)}
               </li>
             )}
             {draft.subtasks.length > 0 && (

@@ -90,7 +90,7 @@ export default function WeekTab({ weekStart, includeClasses }: { weekStart: Date
       </section>
 
       <section className="time-card">
-        <h3>By class</h3>
+        <h3>By class & topic</h3>
         <GroupBars groups={stats.groups} totals={stats.byGroup} classTotals={classTime.byGroup} />
       </section>
 

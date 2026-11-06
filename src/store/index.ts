@@ -66,6 +66,8 @@ export interface AppState extends SyncedData {
   settingsOpen: boolean;
   timePageOpen: boolean;
   sidebarOpen: boolean;
+  /** "Plan my day" panel under the day timeline; `focus` is a task to schedule (from its details). */
+  dayPlan: { open: boolean; focus?: TaskRef };
 
   // ---- UI actions ----
   setView: (view: ViewMode) => void;
@@ -76,6 +78,9 @@ export interface AppState extends SyncedData {
   setSettingsOpen: (open: boolean) => void;
   setTimePageOpen: (open: boolean) => void;
   setSidebarOpen: (open: boolean) => void;
+  /** Show `date` in the Day view with the plan panel open, optionally bringing `focus` to the top. */
+  openDayPlan: (date?: Date, focus?: TaskRef) => void;
+  closeDayPlan: () => void;
   setOnboarded: (v: boolean) => void;
   updateSettings: (patch: Partial<Settings>) => void;
 
@@ -187,6 +192,7 @@ export const useStore = create<AppState>()(
       settingsOpen: false,
       timePageOpen: false,
       sidebarOpen: true,
+      dayPlan: { open: false },
 
       setView: (view) => set({ view }),
       setCursor: (date) => set({ cursor: date.toISOString() }),
@@ -196,6 +202,15 @@ export const useStore = create<AppState>()(
       setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
       setTimePageOpen: (timePageOpen) => set({ timePageOpen }),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
+      openDayPlan: (date, focus) =>
+        set((s) => ({
+          view: 'day',
+          cursor: (date ?? new Date(s.cursor)).toISOString(),
+          dayPlan: { open: true, focus },
+          selectedTaskRef: null,
+          timePageOpen: false,
+        })),
+      closeDayPlan: () => set({ dayPlan: { open: false } }),
       setOnboarded: (onboarded) => set({ onboarded }),
       updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
 

@@ -27,12 +27,12 @@ export function Legend({ groups, classTime = false }: { groups: Group[]; classTi
   );
 }
 
-/** Legend entry explaining the hatched "in class" fill. */
+/** Legend entry explaining the hatched class/topic-meeting fill. */
 export function ClassTimeKey() {
   return (
     <li className="chart-legend-class">
       <span className="chart-swatch class-time" style={{ '--c': 'var(--text-2)' } as CSSProperties} aria-hidden="true" />
-      In class (hatched)
+      Class & topic meetings (hatched)
     </li>
   );
 }
@@ -50,7 +50,7 @@ export function GroupBars({ groups, totals, classTotals }: { groups: Group[]; to
         const g = byKey.get(key)!;
         const tracked = totals.get(key) ?? 0;
         const inClass = classTotals?.get(key) ?? 0;
-        const detail = inClass ? `${formatDuration(tracked)} tracked + ${formatDuration(inClass)} in class` : formatDuration(tracked);
+        const detail = inClass ? `${formatDuration(tracked)} tracked + ${formatDuration(inClass)} in meetings` : formatDuration(tracked);
         return (
           <li key={key} title={`${g.name}: ${detail}`}>
             <span className="group-bars-name">
@@ -229,7 +229,7 @@ export function WeekChart({
                       );
                     }
                     if (cms) {
-                      const detail = `${dayName} · ${formatDuration(cms)} in class`;
+                      const detail = `${dayName} · ${formatDuration(cms)} in meetings`;
                       out.push(
                         <span
                           key={`${g.key}-class`}
@@ -238,7 +238,7 @@ export function WeekChart({
                           tabIndex={0}
                           role="img"
                           aria-label={`${g.name}, ${detail}`}
-                          {...bind({ color: g.color, title: `${g.name} · in class`, detail })}
+                          {...bind({ color: g.color, title: `${g.name} · meetings`, detail })}
                         />,
                       );
                     }

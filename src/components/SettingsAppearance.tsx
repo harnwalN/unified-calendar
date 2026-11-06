@@ -40,15 +40,15 @@ export default function SettingsAppearance() {
 
       <label className="s-switch-row">
         <div className="s-switch-row__text">
-          <div className="s-switch-row__title">Hide completed assignments</div>
-          <div className="s-switch-row__sub">Checked-off assignments disappear from the calendar grid but stay in “Due soon”.</div>
+          <div className="s-switch-row__title">Hide completed tasks</div>
+          <div className="s-switch-row__sub">Finished tasks and assignments leave the home lists instead of collecting under “Completed”.</div>
         </div>
         <button
           type="button"
           role="switch"
           className="s-switch"
           aria-checked={settings.hideCompleted}
-          aria-label="Hide completed assignments"
+          aria-label="Hide completed tasks"
           onClick={() => updateSettings({ hideCompleted: !settings.hideCompleted })}
         />
       </label>
